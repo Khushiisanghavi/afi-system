@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 sample_video/
 .env
+backend/sample_videos/
