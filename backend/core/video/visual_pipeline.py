@@ -1,4 +1,4 @@
-from core.video.timeline_analysis import (
+from backend.core.video.timeline_analysis import (
     generate_visual_timeline,
     compute_overall_visual_score
 )

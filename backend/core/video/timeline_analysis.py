@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from core.video.scene_detection import detect_scenes
+from backend.core.video.scene_detection import detect_scenes
 
 
 def generate_visual_timeline(video_path):

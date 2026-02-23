@@ -1,8 +1,12 @@
 class FinalAFI:
 
-    def compute(self, audio_score: float, text_score: float) -> dict:
+    def compute(self, visual_score: float, audio_score: float, text_score: float) -> dict:
 
-        final_score = 0.6 * audio_score + 0.4 * text_score
+        final_score = (
+            0.4 * visual_score +
+            0.35 * audio_score +
+            0.25 * text_score
+        )
 
         category = self._categorize(final_score)
 

@@ -1,10 +1,16 @@
 import os
 from fastapi import APIRouter, UploadFile, File
+
 from backend.core.audio.audio_analysis import AudioAnalyzer
 from backend.core.scoring.afi_formula import AudioAFIScorer
+
 from backend.core.text.ocr_analysis import TextAnalyzer
 from backend.core.scoring.text_score import TextAFIScorer
+
+from backend.core.video.visual_pipeline import analyze_visual_component
+
 from backend.core.scoring.final_afi import FinalAFI
+
 
 router = APIRouter()
 
@@ -20,26 +26,28 @@ async def analyze_video(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
 
-    # AUDIO
+    visual_data = analyze_visual_component(file_path)
+    visual_score = visual_data["visual_score"] if visual_data else 0.0
+
     audio_analyzer = AudioAnalyzer(file_path)
     audio_metrics = audio_analyzer.analyze()
     audio_scorer = AudioAFIScorer()
     audio_afi = audio_scorer.compute_audio_afi(audio_metrics)
 
-    # TEXT
     text_analyzer = TextAnalyzer(file_path)
     text_metrics = text_analyzer.analyze()
     text_scorer = TextAFIScorer()
     text_afi = text_scorer.compute_text_afi(text_metrics)
 
-    # FINAL
     final = FinalAFI()
     final_score = final.compute(
+        visual_score,
         audio_afi["audio_afi_score"],
         text_afi["text_afi_score"]
     )
 
     return {
+        "visual": visual_data,
         "audio": audio_afi,
         "text": text_afi,
         "final": final_score
