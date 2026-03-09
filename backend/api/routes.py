@@ -11,6 +11,9 @@ from backend.core.video.visual_pipeline import analyze_visual_component
 
 from backend.core.scoring.final_afi import FinalAFI
 
+from backend.database.db import SessionLocal
+from backend.database.models import AnalysisResult
+
 
 router = APIRouter()
 
@@ -46,9 +49,42 @@ async def analyze_video(file: UploadFile = File(...)):
         text_afi["text_afi_score"]
     )
 
+    # 🔹 SAVE RESULT TO DATABASE
+
+    db = SessionLocal()
+
+    record = AnalysisResult(
+        video_name=file.filename,
+        visual_score=visual_score,
+        audio_score=audio_afi["audio_afi_score"],
+        text_score=text_afi["text_afi_score"],
+        final_afi=final_score["final_afi_score"],
+        category=final_score["final_category"]
+    )
+
+    db.add(record)
+    db.commit()
+    db.close()
+
     return {
         "visual": visual_data,
         "audio": audio_afi,
         "text": text_afi,
         "final": final_score
     }
+
+
+# 🔹 HISTORY ENDPOINT
+
+@router.get("/history")
+def get_history():
+
+    db = SessionLocal()
+
+    results = db.query(AnalysisResult).order_by(
+        AnalysisResult.created_at.desc()
+    ).all()
+
+    db.close()
+
+    return results
