@@ -3,19 +3,15 @@ import Link from "next/link";
 
 export const metadata = {
   title: "AFI — Attention Fragmentation Index",
-  description: "Attention Fragmentation Index",
+  description: "Analyze short-form videos for attention stimulation using AI.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen" style={{ background: "var(--background)", color: "var(--foreground)" }}>
+      <body style={{ background: "#05050f", color: "#e8e8f0", minHeight: "100vh" }}>
         <Navbar />
-        <main className="pt-16">{children}</main>
+        <main style={{ paddingTop: "4.5rem" }}>{children}</main>
       </body>
     </html>
   );
@@ -23,113 +19,118 @@ export default function RootLayout({
 
 function Navbar() {
   return (
-    <nav
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-        borderBottom: "1px solid var(--border)",
-        background: "rgba(10,10,10,0.85)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "72rem",
-          margin: "0 auto",
-          padding: "0 1.5rem",
-          height: "3.75rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
-          <div
-            style={{
-              width: "1.75rem",
-              height: "1.75rem",
-              borderRadius: "0.375rem",
-              background: "var(--primary)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1L13 7L7 13L1 7L7 1Z" fill="#0a0a0a" />
-              <circle cx="7" cy="7" r="2.5" fill="#0a0a0a" />
-            </svg>
-          </div>
-          <span style={{ fontWeight: 800, fontSize: "0.9rem", letterSpacing: "-0.01em", color: "var(--foreground)" }}>
-            AFI
-          </span>
-          <span className="mono" style={{ color: "var(--muted)", fontSize: "0.7rem", marginLeft: "0.1rem" }}>
-            /attention-index
-          </span>
-        </Link>
-
-        {/* Nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-          <NavItem href="/" label="Home" />
-          <NavItem href="/results" label="Results" />
-          <NavItem href="/compare" label="Compare" />
-          <NavItem href="/history" label="History" />
-          <NavItem href="/wellness" label="Wellness" />
-        </div>
-
-        {/* CTA */}
-        <Link
-          href="/"
-          className="btn-primary"
-          style={{ fontSize: "0.8rem", padding: "0.45rem 1rem" }}
-        >
-          Analyze Video
-        </Link>
-      </div>
-    </nav>
-  );
-}
-
-function NavItem({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      style={{ textDecoration: "none" }}
-      className="nav-item"
-    >
+    <nav style={{
+      position: "fixed",
+      top: 0, left: 0, right: 0,
+      zIndex: 100,
+      borderBottom: "1px solid rgba(167,139,250,0.1)",
+      background: "rgba(5,5,15,0.85)",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
+    }}>
       <style>{`
-        .nav-item {
-          position: relative;
-          padding: 0.4rem 0.85rem;
+        .nav-link {
+          font-family: 'Tenor Sans', sans-serif;
           font-size: 0.82rem;
           font-weight: 500;
-          color: var(--muted);
-          border-radius: 0.4rem;
+          color: rgba(232,232,240,0.45);
+          text-decoration: none;
+          padding: 0.4rem 0.9rem;
+          border-radius: 0.3rem;
           transition: color 0.2s, background 0.2s;
+          position: relative;
         }
-        .nav-item:hover {
-          color: var(--foreground);
-          background: rgba(255,255,255,0.04);
+        .nav-link:hover {
+          color: rgba(232,232,240,0.9);
+          background: rgba(167,139,250,0.08);
         }
-        .nav-item::after {
+        .nav-link::after {
           content: '';
           position: absolute;
-          bottom: -1px;
+          bottom: 0;
           left: 50%;
           transform: translateX(-50%);
           width: 0;
           height: 1px;
-          background: var(--primary);
-          transition: width 0.25s;
+          background: #a78bfa;
+          transition: width 0.25s ease;
         }
-        .nav-item:hover::after { width: 60%; }
+        .nav-link:hover::after { width: 55%; }
+
+        .nav-cta {
+          font-family: 'Space Mono', monospace;
+          font-size: 0.65rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #05050f;
+          background: #a78bfa;
+          padding: 0.5rem 1.1rem;
+          font-weight: 700;
+          text-decoration: none;
+          transition: background 0.2s;
+          display: inline-block;
+        }
+        .nav-cta:hover { background: #8b6fe8; }
       `}</style>
-      {label}
-    </Link>
+
+      <div style={{
+        maxWidth: "72rem",
+        margin: "0 auto",
+        padding: "0 2rem",
+        height: "4rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+
+        {/* Logo */}
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          <div style={{
+            width: "1.75rem", height: "1.75rem",
+            borderRadius: "0.35rem",
+            background: "#a78bfa",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1L13 7L7 13L1 7L7 1Z" fill="#05050f" />
+              <circle cx="7" cy="7" r="2.5" fill="#05050f" />
+            </svg>
+          </div>
+          <span style={{
+            fontFamily: "'Tenor Sans', sans-serif",
+            fontWeight: 700,
+            fontSize: "0.95rem",
+            letterSpacing: "0.04em",
+            color: "#e8e8f0",
+          }}>
+            AFI
+          </span>
+          <span style={{
+            fontFamily: "'Space Mono', monospace",
+            fontSize: "0.65rem",
+            color: "rgba(167,139,250,0.45)",
+            letterSpacing: "0.05em",
+          }}>
+            /attention-index
+          </span>
+        </Link>
+
+        {/* Nav Links */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <Link href="/"         className="nav-link">Home</Link>
+          <Link href="/results"  className="nav-link">Results</Link>
+          <Link href="/compare"  className="nav-link">Compare</Link>
+          <Link href="/history"  className="nav-link">History</Link>
+          <Link href="/wellness" className="nav-link">Wellness</Link>
+        </div>
+
+        {/* CTA */}
+        <Link href="/" className="nav-cta">
+          Analyze
+        </Link>
+
+      </div>
+    </nav>
   );
 }

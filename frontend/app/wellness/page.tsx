@@ -62,7 +62,7 @@ export default function WellnessPage() {
   const insightBadge = weekly?.average_afi > 70 ? "badge-over" : weekly?.average_afi > 40 ? "badge-moderate" : "badge-calm";
   const insightLabel = weekly?.average_afi > 70 ? "High Stimulation" : weekly?.average_afi > 40 ? "Moderate" : "Healthy";
 
-  const tooltipStyle = { background: "#111", border: "1px solid #1e1e1e", borderRadius: "8px", color: "#f0f0f0" };
+  const tooltipStyle = { background: "#0d0d1a", border: "1px solid rgba(167,139,250,0.12)", borderRadius: "8px", color: "#f0f0f0" };
 
   return (
     <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -116,8 +116,8 @@ export default function WellnessPage() {
         {/* WEEKLY */}
         <div className="card" style={{ padding: "1.75rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
-            <span style={{ width: "0.4rem", height: "0.4rem", borderRadius: "50%", background: "#b8f03a" }} />
-            <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#b8f03a" }}>Weekly Summary</span>
+            <span style={{ width: "0.4rem", height: "0.4rem", borderRadius: "50%", background: "#a78bfa" }} />
+            <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#a78bfa" }}>Weekly Summary</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
             {[
@@ -146,24 +146,24 @@ export default function WellnessPage() {
             <h2 style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.2rem" }}>7-Day AFI Trend</h2>
             <p style={{ color: "var(--muted)", fontSize: "0.78rem" }}>Daily average stimulation index over the past week</p>
           </div>
-          <span className="tag-badge" style={{ borderColor: "rgba(184,240,58,0.3)", color: "#b8f03a", background: "rgba(184,240,58,0.06)" }}>
+          <span className="tag-badge" style={{ borderColor: "rgba(167,139,250,0.3)", color: "#a78bfa", background: "rgba(167,139,250,0.06)" }}>
             Last 7 days
           </span>
         </div>
 
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={trend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e1e1e" />
-            <XAxis dataKey="day"  tick={{ fill: "#555", fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "#555", fontSize: 11 }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "rgba(184,240,58,0.2)" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,139,250,0.12)" />
+            <XAxis dataKey="day"  tick={{ fill: "#6b6890", fontSize: 12 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "rgba(167,139,250,0.2)" }} />
             <Line
               type="monotone"
               dataKey="afi"
-              stroke="#b8f03a"
+              stroke="#a78bfa"
               strokeWidth={2.5}
-              dot={{ r: 4, fill: "#b8f03a", strokeWidth: 0 }}
-              activeDot={{ r: 6, fill: "#b8f03a", strokeWidth: 0 }}
+              dot={{ r: 4, fill: "#a78bfa", strokeWidth: 0 }}
+              activeDot={{ r: 6, fill: "#a78bfa", strokeWidth: 0 }}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -29,11 +29,9 @@ export default function ComparePage() {
   const analyzeVideo = async (file?: File, url?: string) => {
     const formData = new FormData();
     if (file) {
-      formData.append("video", file);
-    } else if (url) {
-      formData.append("url", url);
+      formData.append("file", file);  // backend expects "file"
     } else {
-      throw new Error("No input provided");
+      throw new Error("URL analysis is not supported by the backend yet. Please upload a file.");
     }
     const response = await axios.post("http://127.0.0.1:8000/analyze", formData);
     return response.data;
@@ -100,7 +98,7 @@ export default function ComparePage() {
     return "badge-over";
   }
 
-  const tooltipStyle = { background: "#111", border: "1px solid #1e1e1e", borderRadius: "8px", color: "#f0f0f0" };
+  const tooltipStyle = { background: "#0d0d1a", border: "1px solid rgba(167,139,250,0.12)", borderRadius: "8px", color: "#f0f0f0" };
 
   return (
     <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -126,14 +124,14 @@ export default function ComparePage() {
         {/* VIDEO A */}
         <div className="card" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "0.875rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-            <span style={{ width: "1.5rem", height: "1.5rem", borderRadius: "0.3rem", background: "#b8f03a", color: "#0a0a0a", fontSize: "0.7rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>A</span>
+            <span style={{ width: "1.5rem", height: "1.5rem", borderRadius: "0.3rem", background: "#a78bfa", color: "#05050f", fontSize: "0.7rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>A</span>
             <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>Video A</span>
           </div>
 
-          <label style={{ display: "block", border: "2px dashed var(--border)", borderRadius: "0.625rem", padding: "1rem", textAlign: "center", cursor: "pointer", transition: "border-color 0.2s", borderColor: videoA ? "rgba(184,240,58,0.4)" : "var(--border)" }}>
+          <label style={{ display: "block", border: "2px dashed var(--border)", borderRadius: "0.625rem", padding: "1rem", textAlign: "center", cursor: "pointer", transition: "border-color 0.2s", borderColor: videoA ? "rgba(167,139,250,0.4)" : "var(--border)" }}>
             <input type="file" accept="video/*" style={{ display: "none" }} onChange={(e) => setVideoA(e.target.files?.[0] || null)} />
             {videoA ? (
-              <><div style={{ color: "#b8f03a", fontSize: "1rem" }}>✓</div><div style={{ color: "#b8f03a", fontSize: "0.75rem", marginTop: "0.2rem" }}>{videoA.name}</div></>
+              <><div style={{ color: "#a78bfa", fontSize: "1rem" }}>✓</div><div style={{ color: "#a78bfa", fontSize: "0.75rem", marginTop: "0.2rem" }}>{videoA.name}</div></>
             ) : (
               <><div style={{ color: "var(--muted)", fontSize: "1rem" }}>⬆</div><div style={{ color: "var(--muted)", fontSize: "0.75rem", marginTop: "0.2rem" }}>Upload video file</div></>
             )}
@@ -153,7 +151,7 @@ export default function ComparePage() {
         {/* VIDEO B */}
         <div className="card" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "0.875rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-            <span style={{ width: "1.5rem", height: "1.5rem", borderRadius: "0.3rem", background: "#f0f0f0", color: "#0a0a0a", fontSize: "0.7rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>B</span>
+            <span style={{ width: "1.5rem", height: "1.5rem", borderRadius: "0.3rem", background: "#f0f0f0", color: "#05050f", fontSize: "0.7rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>B</span>
             <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>Video B</span>
           </div>
 
@@ -197,9 +195,9 @@ export default function ComparePage() {
         <>
           {/* SCORE CARDS */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <div className="card" style={{ padding: "2rem", textAlign: "center", borderColor: "rgba(184,240,58,0.25)" }}>
+            <div className="card" style={{ padding: "2rem", textAlign: "center", borderColor: "rgba(167,139,250,0.25)" }}>
               <p className="label-sm" style={{ marginBottom: "0.75rem" }}>Video A</p>
-              <p className="mono" style={{ fontSize: "3.5rem", fontWeight: 700, color: "#b8f03a", lineHeight: 1 }}>
+              <p className="mono" style={{ fontSize: "3.5rem", fontWeight: 700, color: "#a78bfa", lineHeight: 1 }}>
                 {resultA.final.final_afi_score}
               </p>
               <span className={`tag-badge ${getCategoryClass(resultA.final.final_category)}`} style={{ marginTop: "0.75rem" }}>
@@ -220,9 +218,9 @@ export default function ComparePage() {
 
           {/* INSIGHT */}
           {comparisonInsight && (
-            <div className="card" style={{ padding: "1.5rem", borderColor: "rgba(184,240,58,0.2)", background: "rgba(184,240,58,0.03)" }}>
+            <div className="card" style={{ padding: "1.5rem", borderColor: "rgba(167,139,250,0.2)", background: "rgba(167,139,250,0.03)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.625rem" }}>
-                <span style={{ width: "1.5rem", height: "1.5rem", borderRadius: "0.3rem", background: "rgba(184,240,58,0.1)", border: "1px solid rgba(184,240,58,0.25)", color: "#b8f03a", fontSize: "0.7rem", display: "flex", alignItems: "center", justifyContent: "center" }}>✦</span>
+                <span style={{ width: "1.5rem", height: "1.5rem", borderRadius: "0.3rem", background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.25)", color: "#a78bfa", fontSize: "0.7rem", display: "flex", alignItems: "center", justifyContent: "center" }}>✦</span>
                 <span className="label-sm">Comparison Insight</span>
               </div>
               <p style={{ fontSize: "0.9rem", lineHeight: 1.65 }}>{comparisonInsight}</p>
@@ -235,13 +233,13 @@ export default function ComparePage() {
             <p style={{ color: "var(--muted)", fontSize: "0.78rem", marginBottom: "1.5rem" }}>Visual, audio, and text scores for both videos</p>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={modalityComparison} barSize={32} barGap={6}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e1e1e" />
-                <XAxis dataKey="name" tick={{ fill: "#555", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#555", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(184,240,58,0.04)" }} />
-                <Legend wrapperStyle={{ fontSize: 11, color: "#555" }} />
-                <Bar dataKey="videoA" name="Video A" fill="#b8f03a" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="videoB" name="Video B" fill="#333"    radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,139,250,0.12)" />
+                <XAxis dataKey="name" tick={{ fill: "#6b6890", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(167,139,250,0.04)" }} />
+                <Legend wrapperStyle={{ fontSize: 11, color: "#6b6890" }} />
+                <Bar dataKey="videoA" name="Video A" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="videoB" name="Video B" fill="#1e1a3a"    radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -252,13 +250,13 @@ export default function ComparePage() {
             <p style={{ color: "var(--muted)", fontSize: "0.78rem", marginBottom: "1.5rem" }}>Scene-by-scene stimulation for both videos</p>
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={timelineComparison}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e1e1e" />
-                <XAxis dataKey="time" tick={{ fill: "#555", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#555", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,139,250,0.12)" />
+                <XAxis dataKey="time" tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 11, color: "#555" }} />
-                <Line type="monotone" dataKey="videoA" name="Video A" stroke="#b8f03a" strokeWidth={2.5} dot={{ r: 3, fill: "#b8f03a", strokeWidth: 0 }} activeDot={{ r: 5 }} />
-                <Line type="monotone" dataKey="videoB" name="Video B" stroke="#555"    strokeWidth={2.5} dot={{ r: 3, fill: "#555",    strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                <Legend wrapperStyle={{ fontSize: 11, color: "#6b6890" }} />
+                <Line type="monotone" dataKey="videoA" name="Video A" stroke="#a78bfa" strokeWidth={2.5} dot={{ r: 3, fill: "#a78bfa", strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="videoB" name="Video B" stroke="#6b6890"    strokeWidth={2.5} dot={{ r: 3, fill: "#6b6890",    strokeWidth: 0 }} activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

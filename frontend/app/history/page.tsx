@@ -78,7 +78,7 @@ export default function HistoryPage() {
             </p>
           </div>
           <Link href="/" className="btn-primary" style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}>
-            + Analyze New
+            + Analyze Video
           </Link>
         </div>
       </div>
@@ -116,7 +116,7 @@ export default function HistoryPage() {
                 {/* Video */}
                 <td>
                   <div style={{ fontWeight: 600, fontSize: "0.85rem", maxWidth: "280px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {item.video_url || item.video_path || "Video"}
+                    {item.video_name || item.video_url || item.video_path || "Video"}
                   </div>
                 </td>
 

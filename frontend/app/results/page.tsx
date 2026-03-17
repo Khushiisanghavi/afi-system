@@ -104,7 +104,7 @@ export default function ResultsPage() {
           </div>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <Link href="/compare" className="btn-secondary" style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}>Compare →</Link>
-            <Link href="/" className="btn-primary" style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}>Analyze New</Link>
+            <Link href="/" className="btn-primary" style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}>Analyze Video</Link>
           </div>
         </div>
       </div>
@@ -119,7 +119,7 @@ export default function ResultsPage() {
           {/* SVG ring */}
           <div style={{ position: "relative", width: "7.5rem", height: "7.5rem", marginBottom: "1.25rem" }}>
             <svg width="100%" height="100%" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="#1e1e1e" strokeWidth="6" />
+              <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(167,139,250,0.12)" strokeWidth="6" />
               <circle
                 cx="50" cy="50" r="45"
                 fill="none"
@@ -147,7 +147,7 @@ export default function ResultsPage() {
         {/* AI Insight */}
         <div className="card" style={{ padding: "2rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-            <span style={{ width: "1.5rem", height: "1.5rem", borderRadius: "0.3rem", background: "rgba(184,240,58,0.1)", border: "1px solid rgba(184,240,58,0.25)", color: "#b8f03a", fontSize: "0.7rem", display: "flex", alignItems: "center", justifyContent: "center" }}>✦</span>
+            <span style={{ width: "1.5rem", height: "1.5rem", borderRadius: "0.3rem", background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.25)", color: "#a78bfa", fontSize: "0.7rem", display: "flex", alignItems: "center", justifyContent: "center" }}>✦</span>
             <span className="label-sm">AI Insight</span>
           </div>
           <p style={{ fontSize: "0.9rem", lineHeight: 1.7, color: "var(--foreground)" }}>{explanation}</p>
@@ -157,11 +157,11 @@ export default function ResultsPage() {
             {modalityData.map((m) => (
               <div key={m.name} style={{ background: "rgba(255,255,255,0.02)", borderRadius: "0.5rem", padding: "0.75rem", border: "1px solid var(--border)" }}>
                 <div className="label-sm" style={{ marginBottom: "0.3rem" }}>{m.name}</div>
-                <div className="mono" style={{ fontSize: "1.4rem", fontWeight: 700, color: m.score > 70 ? "#f87171" : m.score > 50 ? "#fb923c" : "#b8f03a" }}>
+                <div className="mono" style={{ fontSize: "1.4rem", fontWeight: 700, color: m.score > 70 ? "#f87171" : m.score > 50 ? "#fb923c" : "#a78bfa" }}>
                   {m.score}
                 </div>
                 <div style={{ marginTop: "0.35rem", height: "3px", background: "var(--border)", borderRadius: "9999px", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${m.score}%`, background: m.score > 70 ? "#f87171" : m.score > 50 ? "#fb923c" : "#b8f03a", borderRadius: "9999px", transition: "width 1s ease" }} />
+                  <div style={{ height: "100%", width: `${m.score}%`, background: m.score > 70 ? "#f87171" : m.score > 50 ? "#fb923c" : "#a78bfa", borderRadius: "9999px", transition: "width 1s ease" }} />
                 </div>
               </div>
             ))}
@@ -175,14 +175,14 @@ export default function ResultsPage() {
         <p style={{ color: "var(--muted)", fontSize: "0.78rem", marginBottom: "1.5rem" }}>Visual, audio, and text scores</p>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={modalityData} barSize={44}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e1e1e" />
-            <XAxis dataKey="name" tick={{ fill: "#555", fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis domain={[0, 100]} tick={{ fill: "#555", fontSize: 11 }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,139,250,0.12)" />
+            <XAxis dataKey="name" tick={{ fill: "#6b6890", fontSize: 12 }} axisLine={false} tickLine={false} />
+            <YAxis domain={[0, 100]} tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "8px", color: "#f0f0f0" }}
-              cursor={{ fill: "rgba(184,240,58,0.04)" }}
+              contentStyle={{ background: "#0d0d1a", border: "1px solid rgba(167,139,250,0.12)", borderRadius: "8px", color: "#f0f0f0" }}
+              cursor={{ fill: "rgba(167,139,250,0.04)" }}
             />
-            <Bar dataKey="score" fill="#b8f03a" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="score" fill="#a78bfa" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -204,20 +204,20 @@ export default function ResultsPage() {
 
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={timelineData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e1e" />
-              <XAxis dataKey="scene" tick={{ fill: "#555", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#555", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,139,250,0.12)" />
+              <XAxis dataKey="scene" tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "8px", color: "#f0f0f0" }}
-                cursor={{ stroke: "rgba(184,240,58,0.2)" }}
+                contentStyle={{ background: "#0d0d1a", border: "1px solid rgba(167,139,250,0.12)", borderRadius: "8px", color: "#f0f0f0" }}
+                cursor={{ stroke: "rgba(167,139,250,0.2)" }}
               />
               <Line
                 type="monotone"
                 dataKey="score"
-                stroke="#b8f03a"
+                stroke="#a78bfa"
                 strokeWidth={2.5}
-                dot={{ r: 4, fill: "#b8f03a", strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: "#b8f03a", strokeWidth: 0 }}
+                dot={{ r: 4, fill: "#a78bfa", strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: "#a78bfa", strokeWidth: 0 }}
               />
             </LineChart>
           </ResponsiveContainer>
