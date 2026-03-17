@@ -1,69 +1,93 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [result, setResult] = useState<any>(null);
 
-  const handleUpload = async () => {
-    console.log("Analyze button clicked");
-
-    if (!file) {
-      console.log("No file selected");
+  const handleSubmit = async () => {
+    if (!file && !url) {
+      alert("Upload a file or paste a URL");
       return;
     }
 
-    console.log("File selected:", file.name);
-
     const formData = new FormData();
-    formData.append("file", file);
 
-    setLoading(true);
+    if (file) {
+      formData.append("video", file);
+    } else {
+      formData.append("url", url);
+    }
 
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/analyze",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      setLoading(true);
 
-      localStorage.setItem("afiResult", JSON.stringify(response.data));
+      const res = await fetch("http://localhost:8000/analyze", {
+        method: "POST",
+        body: formData,
+      });
 
-      router.push("/results");
-    } catch (error) {
-      console.error("Upload error:", error);
+      const data = await res.json();
+      setResult(data);
+    } catch (err) {
+      console.error(err);
+      alert("Error analyzing video");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow-md space-y-6">
-        <h1 className="text-2xl font-bold text-center">
-          Upload Video for AFI Analysis
-        </h1>
+    <div className="max-w-2xl mx-auto mt-10 space-y-6">
+      <h1 className="text-3xl font-bold text-center">Analyze Video</h1>
 
-        <input
-          type="file"
-          accept="video/*"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-        />
+      {/* Upload Box */}
+      <div className="bg-white text-black p-6 rounded-xl shadow-lg space-y-4">
+        <div>
+          <label className="block mb-2 font-medium">Upload File</label>
+          <input
+            type="file"
+            className="w-full border p-2 rounded"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+          />
+        </div>
+
+        <div className="text-center text-gray-500">OR</div>
+
+        <div>
+          <label className="block mb-2 font-medium">
+            Paste Video URL
+          </label>
+          <input
+            type="text"
+            placeholder="https://youtube.com/shorts/..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="w-full border p-2 rounded"
+          />
+        </div>
 
         <button
-          onClick={handleUpload}
-          disabled={loading}
-          className="w-full bg-black text-white py-2 rounded-lg hover:opacity-80"
+          onClick={handleSubmit}
+          className="w-full bg-green-500 text-black font-semibold py-2 rounded hover:bg-green-600 transition"
         >
-          {loading ? "Analyzing Video..." : "Analyze"}
+          {loading ? "Analyzing..." : "Analyze"}
         </button>
       </div>
+
+      {/* Result */}
+      {result && (
+        <div className="bg-gray-900 p-6 rounded-xl space-y-2">
+          <h2 className="text-xl font-semibold">Result</h2>
+          <p>AFI Score: {result.afi_score}</p>
+          <p>Visual: {result.visual_score}</p>
+          <p>Audio: {result.audio_score}</p>
+          <p>Text: {result.text_score}</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -14,8 +14,12 @@ from backend.core.scoring.final_afi import FinalAFI
 from backend.database.db import SessionLocal
 from backend.database.models import AnalysisResult
 
+from backend.api.wellness_routes import router as wellness_router
+
 
 router = APIRouter()
+
+router.include_router(wellness_router)
 
 UPLOAD_DIR = "backend/storage"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
