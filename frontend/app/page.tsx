@@ -54,15 +54,16 @@ export default function HomePage() {
         position: "relative",
         overflow: "hidden",
       }}>
-        {/* Violet glow */}
+        {/* Soft Violet/Cyan glow */}
         <div style={{
           position: "absolute",
           width: "60vw", height: "60vw",
           top: "40%", left: "50%",
           transform: "translate(-50%, -50%)",
-          background: "radial-gradient(ellipse, rgba(167,139,250,0.08) 0%, rgba(129,140,248,0.04) 40%, transparent 70%)",
+          background: "radial-gradient(ellipse, rgba(167,139,250,0.06) 0%, rgba(129,140,248,0.03) 40%, transparent 70%)",
           pointerEvents: "none",
           zIndex: 0,
+          animation: "slowPulse 8s ease-in-out infinite alternate"
         }} />
 
         <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: "50rem", width: "100%" }}>
@@ -75,26 +76,32 @@ export default function HomePage() {
           </div>
 
           {/* Title */}
-          <h1 className="anim-fade-up delay-1" style={{
+          <h1 className="anim-fade-up delay-1 display-font" style={{
             fontSize: "clamp(2.8rem, 8vw, 6.5rem)",
-            fontWeight: 300,
+            fontWeight: 600,
             lineHeight: 1.05,
-            letterSpacing: "-0.01em",
+            letterSpacing: "-0.02em",
             marginBottom: "2rem",
+            color: "#ffffff"
           }}>
             Attention<br />
-            <span style={{ color: "#a78bfa" }}>Fragmentation</span><br />
+            <span style={{ 
+              background: "linear-gradient(to right, #a78bfa, #818cf8)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent"
+            }}>Fragmentation</span><br />
             Index
           </h1>
 
           {/* Subtext */}
-          <p className="anim-fade-up delay-2" style={{
-            color: "rgba(232,232,240,0.4)",
-            fontSize: "0.92rem",
-            letterSpacing: "0.05em",
+          <p className="anim-fade-up delay-2 sans" style={{
+            color: "rgba(232, 232, 240, 0.6)",
+            fontSize: "1.05rem",
+            letterSpacing: "0.02em",
             lineHeight: 1.85,
-            maxWidth: "28rem",
+            maxWidth: "32rem",
             margin: "0 auto 3.5rem",
+            fontWeight: 400
           }}>
             Measure the invisible forces that fragment your attention.
             Every cut, every sound spike, every word engineered to keep you watching.
@@ -128,26 +135,26 @@ export default function HomePage() {
 
             {/* SUCCESS STATE */}
             {analyzed ? (
-              <div style={{
-                border: "1px solid rgba(167,139,250,0.35)",
-                padding: "2.5rem 2rem",
+              <div className="card-glass" style={{
+                padding: "3rem 2.5rem",
                 textAlign: "center",
-                background: "rgba(167,139,250,0.04)",
               }}>
                 <div style={{
-                  width: "3.5rem", height: "3.5rem",
+                  width: "4rem", height: "4rem",
                   borderRadius: "50%",
-                  border: "1px solid rgba(167,139,250,0.4)",
+                  border: "2px solid rgba(167, 139, 250, 0.6)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   margin: "0 auto 1.5rem",
-                  color: "#a78bfa", fontSize: "1.1rem",
+                  color: "#a78bfa", fontSize: "1.5rem",
+                  background: "rgba(167, 139, 250, 0.1)",
+                  boxShadow: "0 0 20px rgba(167, 139, 250, 0.2)"
                 }}>✓</div>
                 <p className="label-sm" style={{ color: "#a78bfa", marginBottom: "0.5rem" }}>Analysis Complete</p>
-                <p style={{ fontSize: "0.95rem", fontWeight: 500, marginBottom: "0.4rem" }}>Your video has been analyzed</p>
-                <p style={{ color: "rgba(232,232,240,0.35)", fontSize: "0.75rem", marginBottom: "2rem", wordBreak: "break-all" }}>
+                <p className="sans" style={{ fontSize: "1.1rem", fontWeight: 500, marginBottom: "0.4rem" }}>Your video has been analyzed</p>
+                <p className="sans" style={{ color: "rgba(232, 232, 240, 0.4)", fontSize: "0.85rem", marginBottom: "2.5rem", wordBreak: "break-all" }}>
                   {file ? file.name : url}
                 </p>
-                <a href="/results" className="btn-primary" style={{ display: "block", width: "100%", marginBottom: "0.75rem" }}>
+                <a href="/results" className="btn-primary" style={{ display: "block", width: "100%", marginBottom: "1rem" }}>
                   View Results →
                 </a>
                 <button
@@ -162,44 +169,53 @@ export default function HomePage() {
             ) : (
 
               /* DEFAULT / UPLOAD STATE */
-              <div style={{
-                border: "1px solid rgba(167,139,250,0.12)",
-                padding: "2rem",
-                background: "rgba(167,139,250,0.03)",
+              <div className="card-glass" style={{
+                padding: "2.5rem",
               }}>
-                <p className="label-sm" style={{ marginBottom: "0.75rem" }}>Upload Video File</p>
+                <p className="label-sm" style={{ marginBottom: "1rem" }}>Upload Video File</p>
 
                 {/* Drop zone */}
                 <label
                   style={{
                     display: "block",
-                    border: `1px dashed ${file ? "rgba(167,139,250,0.5)" : "rgba(167,139,250,0.15)"}`,
-                    padding: "2rem",
+                    border: `1.5px dashed ${file ? "rgba(167,139,250,0.6)" : "rgba(255,255,255,0.15)"}`,
+                    borderRadius: "12px",
+                    padding: "2.5rem 2rem",
                     textAlign: "center",
                     cursor: "pointer",
-                    transition: "border-color 0.3s, background 0.3s",
-                    background: file ? "rgba(167,139,250,0.05)" : "transparent",
-                    marginBottom: "1.25rem",
+                    transition: "all 0.3s ease",
+                    background: file ? "rgba(167, 139, 250, 0.08)" : "rgba(255, 255, 255, 0.02)",
+                    marginBottom: "1.5rem",
                   }}
-                  onMouseEnter={(e) => { if (!file) e.currentTarget.style.borderColor = "rgba(167,139,250,0.3)"; }}
-                  onMouseLeave={(e) => { if (!file) e.currentTarget.style.borderColor = "rgba(167,139,250,0.15)"; }}
+                  onMouseEnter={(e) => { 
+                    if (!file) {
+                      e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.4)"; 
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                    }
+                  }}
+                  onMouseLeave={(e) => { 
+                    if (!file) {
+                      e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.15)"; 
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    }
+                  }}
                 >
                   <input type="file" style={{ display: "none" }} onChange={(e) => setFile(e.target.files?.[0] || null)} />
                   {file ? (
                     <>
-                      <div style={{ color: "#a78bfa", fontSize: "1rem", marginBottom: "0.3rem" }}>✓</div>
-                      <div style={{ color: "#a78bfa", fontSize: "0.82rem", fontWeight: 600 }}>{file.name}</div>
-                      <div style={{ color: "rgba(232,232,240,0.3)", fontSize: "0.7rem", marginTop: "0.2rem" }}>
+                      <div className="anim-fade-up" style={{ color: "#a78bfa", fontSize: "1.5rem", marginBottom: "0.5rem" }}>✓</div>
+                      <div className="sans" style={{ color: "#e8e8f0", fontSize: "0.95rem", fontWeight: 500 }}>{file.name}</div>
+                      <div className="mono" style={{ color: "rgba(232, 232, 240, 0.4)", fontSize: "0.75rem", marginTop: "0.4rem" }}>
                         {(file.size / 1e6).toFixed(1)} MB
                       </div>
                     </>
                   ) : (
                     <>
-                      <div style={{ color: "rgba(232,232,240,0.2)", fontSize: "1rem", marginBottom: "0.4rem" }}>⬆</div>
-                      <div style={{ fontSize: "0.82rem", color: "rgba(232,232,240,0.6)", marginBottom: "0.2rem" }}>
+                      <div style={{ color: "rgba(232, 232, 240, 0.4)", fontSize: "1.5rem", marginBottom: "0.6rem", transition: "transform 0.3s" }}>↑</div>
+                      <div className="sans" style={{ fontSize: "0.95rem", color: "rgba(232, 232, 240, 0.8)", marginBottom: "0.4rem", fontWeight: 500 }}>
                         Drop video or click to browse
                       </div>
-                      <div style={{ fontSize: "0.68rem", color: "rgba(232,232,240,0.25)", letterSpacing: "0.08em" }}>
+                      <div style={{ fontSize: "0.75rem", color: "rgba(232, 232, 240, 0.4)", letterSpacing: "0.05em" }}>
                         MP4 · MOV · AVI · WebM
                       </div>
                     </>
@@ -271,17 +287,29 @@ export default function HomePage() {
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-          gap: "1px",
-          background: "rgba(167,139,250,0.08)",
+          gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+          gap: "1.5rem",
+          padding: "1rem",
         }}>
           {features.map((f, i) => (
-            <div key={i} className="card-hover" style={{ padding: "2rem 1.75rem", background: "#05050f" }}>
-              <div style={{ fontSize: "1.2rem", color: "#a78bfa", marginBottom: "1rem" }}>{f.icon}</div>
-              <div style={{ fontWeight: 600, fontSize: "0.88rem", marginBottom: "0.5rem", letterSpacing: "0.02em" }}>
+            <div key={i} className="card-glass card-hover" style={{ padding: "2rem 1.75rem" }}>
+              <div style={{ 
+                fontSize: "1.4rem", 
+                color: "#a78bfa", 
+                marginBottom: "1.25rem",
+                width: "3rem",
+                height: "3rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(167, 139, 250, 0.1)",
+                borderRadius: "12px",
+                border: "1px solid rgba(167, 139, 250, 0.2)"
+              }}>{f.icon}</div>
+              <div className="sans" style={{ fontWeight: 600, fontSize: "1rem", marginBottom: "0.75rem", letterSpacing: "0.02em", color: "#ffffff" }}>
                 {f.title}
               </div>
-              <div style={{ color: "rgba(232,232,240,0.35)", fontSize: "0.78rem", lineHeight: 1.7 }}>
+              <div className="sans" style={{ color: "rgba(232, 232, 240, 0.5)", fontSize: "0.85rem", lineHeight: 1.6 }}>
                 {f.desc}
               </div>
             </div>
@@ -289,13 +317,15 @@ export default function HomePage() {
         </div>
 
         {/* Bottom CTA */}
-        <div style={{
-          marginTop: "1px",
-          padding: "3rem 2.5rem",
+        <div className="card-glass" style={{
+          marginTop: "3rem",
+          padding: "3.5rem 2.5rem",
           textAlign: "center",
-          background: "rgba(167,139,250,0.03)",
-          border: "1px solid rgba(167,139,250,0.08)",
-          borderTop: "none",
+          borderBottom: "none",
+          borderLeft: "none",
+          borderRight: "none",
+          borderRadius: 0,
+          background: "linear-gradient(to top, rgba(167, 139, 250, 0.03), transparent)"
         }}>
           <p className="label-sm" style={{ marginBottom: "1.5rem" }}>Explore More</p>
           <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>

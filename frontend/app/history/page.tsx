@@ -70,52 +70,52 @@ export default function HistoryPage() {
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
           <div>
-            <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.35rem" }}>
+            <h1 className="display-font" style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "0.35rem", color: "#ffffff" }}>
               Analysis History
             </h1>
-            <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+            <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.95rem" }}>
               View previously analyzed videos and their AFI scores.
             </p>
           </div>
-          <Link href="/" className="btn-primary" style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}>
+          <Link href="/" className="btn-primary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.1rem" }}>
             + Analyze Video
           </Link>
         </div>
       </div>
 
       {/* Summary stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
         {[
           { label: "Total Analyzed",   val: history.length, unit: "videos" },
-          { label: "Avg AFI",           val: (history.reduce((s, h) => s + (h.final_afi || 0), 0) / history.length).toFixed(1), unit: "/100" },
+          { label: "Avg AFI",           val: history.length ? (history.reduce((s, h) => s + (h.final_afi || 0), 0) / history.length).toFixed(1) : 0, unit: "/100" },
           { label: "High Stimulation",  val: history.filter((h) => (h.final_afi || 0) >= 70).length, unit: "videos" },
         ].map((s, i) => (
-          <div key={i} className="card" style={{ padding: "1.125rem 1.25rem" }}>
-            <div className="label-sm" style={{ marginBottom: "0.3rem" }}>{s.label}</div>
-            <div className="mono" style={{ fontSize: "1.6rem", fontWeight: 700 }}>
-              {s.val}<span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 400, marginLeft: "0.25rem" }}>{s.unit}</span>
+          <div key={i} className="card-glass" style={{ padding: "1.5rem" }}>
+            <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.9rem", marginBottom: "0.5rem" }}>{s.label}</div>
+            <div className="mono" style={{ fontSize: "2rem", fontWeight: 700, color: "#ffffff" }}>
+              {s.val}<span className="sans" style={{ fontSize: "0.85rem", color: "var(--muted-mid)", fontWeight: 500, marginLeft: "0.3rem" }}>{s.unit}</span>
             </div>
           </div>
         ))}
       </div>
 
       {/* TABLE */}
-      <div className="card" style={{ overflow: "hidden" }}>
+      <div className="card-glass" style={{ overflow: "hidden", padding: "1rem 0" }}>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Video</th>
-              <th>AFI Score</th>
-              <th>Category</th>
-              <th>Date</th>
+              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Video</th>
+              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>AFI Score</th>
+              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Category</th>
+              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Date</th>
             </tr>
           </thead>
           <tbody>
             {history.map((item) => (
-              <tr key={item.id}>
+              <tr key={item.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
                 {/* Video */}
                 <td>
-                  <div style={{ fontWeight: 600, fontSize: "0.85rem", maxWidth: "280px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <div className="sans" style={{ fontWeight: 500, fontSize: "0.95rem", maxWidth: "280px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>
                     {item.video_name || item.video_url || item.video_path || "Video"}
                   </div>
                 </td>
@@ -129,14 +129,14 @@ export default function HistoryPage() {
 
                 {/* Category Badge */}
                 <td>
-                  <span className={`tag-badge ${getCategoryClass(item.category)}`}>
+                  <span className={`tag-badge ${getCategoryClass(item.category)}`} style={{ borderRadius: "4px" }}>
                     {item.category}
                   </span>
                 </td>
 
                 {/* Date */}
                 <td>
-                  <span className="mono" style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
+                  <span className="sans" style={{ fontSize: "0.9rem", color: "var(--muted-mid)" }}>
                     {new Date(item.created_at).toLocaleDateString()}
                   </span>
                 </td>
@@ -147,17 +147,17 @@ export default function HistoryPage() {
       </div>
 
       {/* Footer nav */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "0.75rem", paddingTop: "0.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
         {[
           { href: "/results", icon: "←", label: "Latest Results",  desc: "View most recent analysis" },
           { href: "/compare", icon: "⇄", label: "Compare Videos",  desc: "Side-by-side comparison" },
           { href: "/wellness",icon: "◎", label: "Wellness",         desc: "Media health overview" },
         ].map((n) => (
           <Link key={n.href} href={n.href} style={{ textDecoration: "none" }}>
-            <div className="card card-hover" style={{ padding: "1.125rem 1.25rem" }}>
-              <div className="mono" style={{ color: "var(--muted)", fontSize: "0.75rem", marginBottom: "0.3rem" }}>{n.icon}</div>
-              <div style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.2rem" }}>{n.label}</div>
-              <div style={{ color: "var(--muted)", fontSize: "0.72rem" }}>{n.desc}</div>
+            <div className="card-glass card-hover" style={{ padding: "1.5rem" }}>
+              <div className="mono" style={{ color: "var(--primary)", fontSize: "1.1rem", marginBottom: "0.5rem" }}>{n.icon}</div>
+              <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.3rem", color: "#ffffff" }}>{n.label}</div>
+              <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem" }}>{n.desc}</div>
             </div>
           </Link>
         ))}

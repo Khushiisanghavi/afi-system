@@ -23,13 +23,13 @@ export default function WellnessPage() {
     const fetchAll = async () => {
       try {
         const [t, w, tr] = await Promise.all([
-          fetch("http://localhost:8000/wellness/today").then((r) => r.json()),
-          fetch("http://localhost:8000/wellness/weekly").then((r) => r.json()),
-          fetch("http://localhost:8000/wellness/trend").then((r) => r.json()),
+          fetch("http://localhost:8000/wellness/today").then((r) => r.ok ? r.json() : null).catch(() => null),
+          fetch("http://localhost:8000/wellness/weekly").then((r) => r.ok ? r.json() : null).catch(() => null),
+          fetch("http://localhost:8000/wellness/trend").then((r) => r.ok ? r.json() : []).catch(() => []),
         ]);
         setToday(t);
         setWeekly(w);
-        setTrend(tr);
+        setTrend(tr || []);
       } catch (err) {
         console.error("Wellness fetch error:", err);
       } finally {
@@ -76,16 +76,16 @@ export default function WellnessPage() {
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
           <div>
-            <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.35rem" }}>
+            <h1 className="display-font" style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "0.35rem", color: "#ffffff" }}>
               Media Wellness Dashboard
             </h1>
-            <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+            <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.95rem" }}>
               Monitor your attention health and media habits.
             </p>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <Link href="/history" className="btn-secondary" style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}>Full History</Link>
-            <Link href="/" className="btn-primary" style={{ fontSize: "0.8rem", padding: "0.45rem 0.9rem" }}>Analyze Video</Link>
+          <div style={{ display: "flex", gap: "0.75rem" }}>
+            <Link href="/history" className="btn-secondary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.1rem" }}>Full History</Link>
+            <Link href="/" className="btn-primary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.1rem" }}>Analyze Video</Link>
           </div>
         </div>
       </div>
@@ -94,44 +94,44 @@ export default function WellnessPage() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
 
         {/* TODAY */}
-        <div className="card" style={{ padding: "1.75rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
-            <span style={{ width: "0.4rem", height: "0.4rem", borderRadius: "50%", background: "#34d399" }} />
-            <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#34d399" }}>Today</span>
+        <div className="card-glass" style={{ padding: "2rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1.5rem" }}>
+            <span style={{ width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "#34d399", boxShadow: "0 0 8px rgba(52, 211, 153, 0.5)" }} />
+            <span className="sans" style={{ fontWeight: 600, fontSize: "1rem", color: "#34d399" }}>Today</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             {[
               { label: "Videos analyzed", val: today?.videos_today || 0 },
               { label: "Average AFI",     val: today?.average_afi_today?.toFixed?.(2) || 0 },
               { label: "High stimulation",val: today?.high_stimulation_today || 0 },
             ].map((row) => (
               <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "var(--muted)", fontSize: "0.82rem" }}>{row.label}</span>
-                <span className="mono" style={{ fontWeight: 700, fontSize: "1rem" }}>{row.val}</span>
+                <span className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.9rem" }}>{row.label}</span>
+                <span className="mono" style={{ fontWeight: 700, fontSize: "1.1rem", color: "#ffffff" }}>{row.val}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* WEEKLY */}
-        <div className="card" style={{ padding: "1.75rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
-            <span style={{ width: "0.4rem", height: "0.4rem", borderRadius: "50%", background: "#a78bfa" }} />
-            <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#a78bfa" }}>Weekly Summary</span>
+        <div className="card-glass" style={{ padding: "2rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1.5rem" }}>
+            <span style={{ width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 8px rgba(167, 139, 250, 0.5)" }} />
+            <span className="sans" style={{ fontWeight: 600, fontSize: "1rem", color: "#a78bfa" }}>Weekly Summary</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             {[
               { label: "Videos analyzed",  val: weekly?.videos_analyzed || 0 },
               { label: "Average AFI",      val: weekly?.average_afi?.toFixed?.(2) || 0 },
               { label: "High stimulation", val: weekly?.high_stimulation_videos || 0 },
             ].map((row) => (
               <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "var(--muted)", fontSize: "0.82rem" }}>{row.label}</span>
-                <span className="mono" style={{ fontWeight: 700, fontSize: "1rem" }}>{row.val}</span>
+                <span className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.9rem" }}>{row.label}</span>
+                <span className="mono" style={{ fontWeight: 700, fontSize: "1.1rem", color: "#ffffff" }}>{row.val}</span>
               </div>
             ))}
             {weekly?.recommendation && (
-              <p style={{ color: "var(--muted)", fontSize: "0.78rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border)", lineHeight: 1.55 }}>
+              <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem", paddingTop: "0.75rem", borderTop: "1px solid var(--card-border)", lineHeight: 1.6 }}>
                 {weekly.recommendation}
               </p>
             )}
@@ -140,7 +140,7 @@ export default function WellnessPage() {
       </div>
 
       {/* TREND CHART */}
-      <div className="card" style={{ padding: "2rem" }}>
+      <div className="card-glass" style={{ padding: "2rem", marginTop: "0.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
           <div>
             <h2 style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.2rem" }}>7-Day AFI Trend</h2>
@@ -170,34 +170,34 @@ export default function WellnessPage() {
       </div>
 
       {/* WELLNESS INSIGHT */}
-      <div className="card" style={{ padding: "1.5rem", borderColor: `${insightColor}22`, background: `${insightColor}08` }}>
+      <div className="card-glass" style={{ padding: "1.5rem", borderColor: `${insightColor}33`, background: `${insightColor}10` }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-          <div style={{ width: "2rem", height: "2rem", borderRadius: "0.4rem", background: `${insightColor}15`, border: `1px solid ${insightColor}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "0.1rem" }}>
-            <span style={{ color: insightColor, fontSize: "0.85rem" }}>◎</span>
+          <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "8px", background: `${insightColor}15`, border: `1px solid ${insightColor}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "0.1rem" }}>
+            <span style={{ color: insightColor, fontSize: "1.1rem" }}>◎</span>
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
-              <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>Wellness Insight</span>
-              <span className={`tag-badge ${insightBadge}`} style={{ fontSize: "0.6rem" }}>{insightLabel}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+              <span className="sans" style={{ fontWeight: 600, fontSize: "1rem", color: "#ffffff" }}>Wellness Insight</span>
+              <span className={`tag-badge ${insightBadge}`} style={{ fontSize: "0.65rem", borderRadius: "4px" }}>{insightLabel}</span>
             </div>
-            <p style={{ color: "var(--muted)", fontSize: "0.875rem", lineHeight: 1.65 }}>{wellnessInsight}</p>
+            <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.95rem", lineHeight: 1.65 }}>{wellnessInsight}</p>
           </div>
         </div>
       </div>
 
       {/* Footer nav */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "0.75rem", paddingTop: "0.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
         {[
-          { href: "/",        icon: "⬆", label: "Analyze",        desc: "Analyze a new video" },
+          { href: "/",        icon: "↑", label: "Analyze",        desc: "Analyze a new video" },
           { href: "/results", icon: "◈", label: "Results",         desc: "Latest analysis breakdown" },
           { href: "/compare", icon: "⇄", label: "Compare",         desc: "Head-to-head comparison" },
           { href: "/history", icon: "↻", label: "History",         desc: "All past analyses" },
         ].map((n) => (
           <Link key={n.href} href={n.href} style={{ textDecoration: "none" }}>
-            <div className="card card-hover" style={{ padding: "1.125rem 1.25rem" }}>
-              <div className="mono" style={{ color: "var(--muted)", fontSize: "0.75rem", marginBottom: "0.3rem" }}>{n.icon}</div>
-              <div style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.2rem" }}>{n.label}</div>
-              <div style={{ color: "var(--muted)", fontSize: "0.72rem" }}>{n.desc}</div>
+            <div className="card-glass card-hover" style={{ padding: "1.5rem" }}>
+              <div className="mono" style={{ color: "var(--primary)", fontSize: "1.1rem", marginBottom: "0.5rem" }}>{n.icon}</div>
+              <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.3rem", color: "#ffffff" }}>{n.label}</div>
+              <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem" }}>{n.desc}</div>
             </div>
           </Link>
         ))}

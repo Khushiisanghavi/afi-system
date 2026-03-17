@@ -30,47 +30,53 @@ function Navbar() {
     }}>
       <style>{`
         .nav-link {
-          font-family: 'Tenor Sans', sans-serif;
-          font-size: 0.82rem;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.9rem;
           font-weight: 500;
-          color: rgba(232,232,240,0.45);
+          color: rgba(232, 232, 240, 0.6);
           text-decoration: none;
-          padding: 0.4rem 0.9rem;
-          border-radius: 0.3rem;
-          transition: color 0.2s, background 0.2s;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          transition: all 0.2s ease;
           position: relative;
         }
         .nav-link:hover {
-          color: rgba(232,232,240,0.9);
-          background: rgba(167,139,250,0.08);
+          color: rgba(232, 232, 240, 1);
+          background: rgba(255, 255, 255, 0.05);
         }
         .nav-link::after {
           content: '';
           position: absolute;
-          bottom: 0;
+          bottom: 4px;
           left: 50%;
           transform: translateX(-50%);
           width: 0;
-          height: 1px;
-          background: #a78bfa;
-          transition: width 0.25s ease;
+          height: 2px;
+          background: var(--primary);
+          transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          border-radius: 2px;
+          opacity: 0;
         }
-        .nav-link:hover::after { width: 55%; }
+        .nav-link:hover::after { width: 40%; opacity: 1; }
 
         .nav-cta {
-          font-family: 'Space Mono', monospace;
-          font-size: 0.65rem;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: #05050f;
-          background: #a78bfa;
-          padding: 0.5rem 1.1rem;
-          font-weight: 700;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--primary-text);
+          background: var(--primary);
+          padding: 0.5rem 1.2rem;
+          border-radius: 6px;
           text-decoration: none;
-          transition: background 0.2s;
+          transition: all 0.2s ease;
           display: inline-block;
+          box-shadow: 0 2px 8px rgba(167, 139, 250, 0.15);
         }
-        .nav-cta:hover { background: #8b6fe8; }
+        .nav-cta:hover { 
+          background: #b59cfc; 
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(167, 139, 250, 0.25);
+        }
       `}</style>
 
       <div style={{
@@ -98,10 +104,10 @@ function Navbar() {
             </svg>
           </div>
           <span style={{
-            fontFamily: "'Tenor Sans', sans-serif",
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            letterSpacing: "0.04em",
+            fontFamily: "'Outfit', sans-serif",
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            letterSpacing: "0.02em",
             color: "#e8e8f0",
           }}>
             AFI
