@@ -71,7 +71,6 @@ def generate_visual_timeline(video_path):
 
     motion_values = np.array([m for (_, m) in motion_per_frame])
 
-    # Adaptive normalization baselines
     motion_mean = np.mean(motion_values)
     motion_std = np.std(motion_values)
 
@@ -79,8 +78,8 @@ def generate_visual_timeline(video_path):
 
     for scene in scenes:
 
-        start = scene["start"]
-        end = scene["end"]
+        start    = scene["start"]
+        end      = scene["end"]
         duration = scene["duration"]
 
         scene_motion = [
@@ -95,16 +94,14 @@ def generate_visual_timeline(video_path):
             avg_motion = 0.0
             max_motion = 0.0
 
-        # ---- Normalization ----
-
         norm_duration = 1 - min(duration / 3.0, 1.0)
 
         if motion_std > 0:
             norm_avg_motion = min(avg_motion / (motion_mean + motion_std), 1.0)
             norm_max_motion = min(max_motion / (motion_mean + 2 * motion_std), 1.0)
         else:
-            norm_avg_motion = 0
-            norm_max_motion = 0
+            norm_avg_motion = 0.0
+            norm_max_motion = 0.0
 
         scene_score = (
             0.4 * norm_duration +
@@ -113,24 +110,26 @@ def generate_visual_timeline(video_path):
         )
 
         timeline.append({
-            "start": float(start),
-            "end": float(end),
-            "duration": float(duration),
-            "avg_motion": avg_motion,
-            "max_motion": max_motion,
-            "scene_stimulation_score": float(scene_score)
+            "start":                    float(start),
+            "end":                      float(end),
+            "duration":                 float(duration),
+            "avg_motion":               avg_motion,
+            "max_motion":               max_motion,
+            "scene_stimulation_score":  float(scene_score),
         })
 
     return timeline
 
 
-def compute_overall_visual_score(timeline):
+def compute_overall_visual_score(timeline) -> float:
+    """Returns visual score on 0–100 scale."""
 
     if not timeline:
         return 0.0
 
-    scores = [scene["scene_stimulation_score"] for scene in timeline]
-
+    scores       = [scene["scene_stimulation_score"] for scene in timeline]
     overall_score = float(np.mean(scores))
+    overall_score = min(overall_score, 1.0)
 
-    return min(overall_score, 1.0)
+    # Scale to 0–100 to match audio and text scorers
+    return round(overall_score * 100, 2)

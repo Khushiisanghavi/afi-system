@@ -15,30 +15,26 @@ def generate_weekly_report(db: Session):
 
     if not results:
         return {
-            "videos_analyzed": 0,
-            "average_afi": 0,
+            "videos_analyzed":        0,
+            "average_afi":            0,
             "high_stimulation_videos": 0,
-            "recommendation": "No videos analyzed this week."
+            "recommendation":         "No videos analyzed this week.",
         }
 
-    total = len(results)
-
+    total   = len(results)
     avg_afi = sum(r.final_afi for r in results) / total
+    high    = len([r for r in results if r.category in ["High", "Overstimulating"]])
 
-    high = len(
-        [r for r in results if r.category in ["High", "Overstimulating"]]
-    )
-
-    if avg_afi > 0.7:
-        recommendation = "Your recent media consumption is highly stimulating."
-    elif avg_afi > 0.5:
-        recommendation = "Your stimulation level is moderate."
+    if avg_afi > 70:
+        recommendation = "Your recent media consumption is highly stimulating. Consider taking breaks."
+    elif avg_afi > 50:
+        recommendation = "Your stimulation level is moderate. Try balancing with calmer content."
     else:
-        recommendation = "Your media consumption is balanced."
+        recommendation = "Your media consumption looks balanced. Keep it up."
 
     return {
-        "videos_analyzed": total,
-        "average_afi": round(avg_afi, 3),
+        "videos_analyzed":        total,
+        "average_afi":            round(avg_afi, 2),
         "high_stimulation_videos": high,
-        "recommendation": recommendation
+        "recommendation":         recommendation,
     }

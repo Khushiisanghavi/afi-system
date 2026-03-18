@@ -11,22 +11,45 @@ export default function HomePage() {
 
   const handleAnalyze = async () => {
     if (!file && !url) { alert("Upload a file or paste a URL"); return; }
-    const formData = new FormData();
-    if (file) {
-      formData.append("file", file);
-    } else {
-      alert("URL analysis is not supported by the backend yet. Please upload a file.");
-      return;
-    }
+
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:8000/analyze", { method: "POST", body: formData });
-      const data = await res.json();
+      let data;
+
+      if (file) {
+        // ── file upload ── FormData to /analyze
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("http://localhost:8000/analyze", {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `Server error ${res.status}`);
+        }
+        data = await res.json();
+
+      } else {
+        // ── URL ── JSON body to /analyze-url
+        const res = await fetch("http://localhost:8000/analyze-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url.trim() }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `Server error ${res.status}`);
+        }
+        data = await res.json();
+      }
+
       localStorage.setItem("afiResult", JSON.stringify(data));
       setAnalyzed(true);
-    } catch (err) {
+
+    } catch (err: any) {
       console.error(err);
-      alert("Error analyzing video");
+      alert(err.message || "Error analyzing video");
     } finally {
       setLoading(false);
     }
