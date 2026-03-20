@@ -2,7 +2,7 @@ import "./globals.css";
 import Link from "next/link";
 
 export const metadata = {
-  title: "AFI — Attention Fragmentation Index",
+  title: "AFI – Attention Fragmentation Index",
   description: "Analyze short-form videos for attention stimulation using AI.",
 };
 
@@ -59,6 +59,74 @@ function Navbar() {
         }
         .nav-link:hover::after { width: 40%; opacity: 1; }
 
+        .nav-link-creator {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: rgba(129, 140, 248, 0.8);
+          text-decoration: none;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+        .nav-link-creator:hover {
+          color: rgba(129, 140, 248, 1);
+          background: rgba(129, 140, 248, 0.08);
+        }
+        .nav-link-creator::after {
+          content: '';
+          position: absolute;
+          bottom: 4px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 2px;
+          background: #818cf8;
+          transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          border-radius: 2px;
+          opacity: 0;
+        }
+        .nav-link-creator:hover::after { width: 40%; opacity: 1; }
+
+        .nav-link-wellbeing {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: rgba(45, 212, 191, 0.8);
+          text-decoration: none;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+        .nav-link-wellbeing:hover {
+          color: rgba(45, 212, 191, 1);
+          background: rgba(45, 212, 191, 0.08);
+        }
+        .nav-link-wellbeing::after {
+          content: '';
+          position: absolute;
+          bottom: 4px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 2px;
+          background: #2dd4bf;
+          transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          border-radius: 2px;
+          opacity: 0;
+        }
+        .nav-link-wellbeing:hover::after { width: 40%; opacity: 1; }
+
+        .nav-divider {
+          width: 1px;
+          height: 1.2rem;
+          background: rgba(167, 139, 250, 0.2);
+          margin: 0 0.25rem;
+          flex-shrink: 0;
+        }
+
         .nav-cta {
           font-family: 'Inter', sans-serif;
           font-size: 0.85rem;
@@ -72,8 +140,8 @@ function Navbar() {
           display: inline-block;
           box-shadow: 0 2px 8px rgba(167, 139, 250, 0.15);
         }
-        .nav-cta:hover { 
-          background: #b59cfc; 
+        .nav-cta:hover {
+          background: #b59cfc;
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(167, 139, 250, 0.25);
         }
@@ -129,6 +197,11 @@ function Navbar() {
           <Link href="/compare"  className="nav-link">Compare</Link>
           <Link href="/history"  className="nav-link">History</Link>
           <Link href="/wellness" className="nav-link">Wellness</Link>
+
+          <div className="nav-divider" />
+
+          <Link href="/creator"   className="nav-link-creator">Creator Studio</Link>
+          <Link href="/wellbeing" className="nav-link-wellbeing">Wellbeing</Link>
         </div>
 
         {/* CTA */}

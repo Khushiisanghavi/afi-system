@@ -1,0 +1,42 @@
+{
+  "short_form_entertainment": {
+    "label": "Short-form entertainment",
+    "scene_change_rate": { "min": 0.6, "max": 1.2, "optimal": 0.9 },
+    "tempo_bpm":         { "min": 120, "max": 160, "optimal": 140 },
+    "words_per_second":  { "min": 1.5, "max": 3.0, "optimal": 2.2 },
+    "text_area_ratio":   { "min": 0.01, "max": 0.03, "optimal": 0.018 },
+    "rms_energy":        { "min": 0.06, "max": 0.15, "optimal": 0.10 }
+  },
+  "fast_paced_educational": {
+    "label": "Fast-paced educational",
+    "scene_change_rate": { "min": 0.5, "max": 0.9, "optimal": 0.7 },
+    "tempo_bpm":         { "min": 110, "max": 150, "optimal": 130 },
+    "words_per_second":  { "min": 2.0, "max": 3.5, "optimal": 2.8 },
+    "text_area_ratio":   { "min": 0.015, "max": 0.04, "optimal": 0.025 },
+    "rms_energy":        { "min": 0.05, "max": 0.12, "optimal": 0.08 }
+  },
+  "calm_explainer": {
+    "label": "Calm explainer",
+    "scene_change_rate": { "min": 0.1, "max": 0.4, "optimal": 0.25 },
+    "tempo_bpm":         { "min": 70,  "max": 110, "optimal": 90  },
+    "words_per_second":  { "min": 1.5, "max": 2.5, "optimal": 2.0 },
+    "text_area_ratio":   { "min": 0.01, "max": 0.035, "optimal": 0.02 },
+    "rms_energy":        { "min": 0.03, "max": 0.08, "optimal": 0.05 }
+  },
+  "vlog_lifestyle": {
+    "label": "Vlog / lifestyle",
+    "scene_change_rate": { "min": 0.3, "max": 0.7, "optimal": 0.5 },
+    "tempo_bpm":         { "min": 90,  "max": 130, "optimal": 110 },
+    "words_per_second":  { "min": 1.2, "max": 2.8, "optimal": 2.0 },
+    "text_area_ratio":   { "min": 0.005, "max": 0.02, "optimal": 0.012 },
+    "rms_energy":        { "min": 0.04, "max": 0.10, "optimal": 0.07 }
+  },
+  "product_review": {
+    "label": "Product review",
+    "scene_change_rate": { "min": 0.2, "max": 0.6, "optimal": 0.4 },
+    "tempo_bpm":         { "min": 95,  "max": 135, "optimal": 115 },
+    "words_per_second":  { "min": 2.0, "max": 3.2, "optimal": 2.6 },
+    "text_area_ratio":   { "min": 0.01, "max": 0.03, "optimal": 0.02 },
+    "rms_energy":        { "min": 0.05, "max": 0.11, "optimal": 0.08 }
+  }
+}
