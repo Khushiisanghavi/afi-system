@@ -2,15 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-interface Session {
-  video_name: string | null;
-  final_afi: number;
-  harm_tier: string;
-  created_at: string;
-}
+interface Session { video_name: string | null; final_afi: number; harm_tier: string; created_at: string; }
 interface ContentMix { calm: number; moderate: number; high: number; overstimulating: number; }
 interface Checkin { focus_quality: number; notes: string | null; created_at: string; }
-
 interface ProfileData {
   profile_tier: string;
   attention_fragmentation_index: number;
@@ -22,33 +16,23 @@ interface ProfileData {
   insights: string[];
 }
 
-const HARM_INFO: Record<string, { color: string; bg: string; dot: string; desc: string }> = {
-  Calm: {
-    color: "text-emerald-700", bg: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700",
-    dot: "bg-emerald-500",
-    desc: "Supports recovery of attention. Good for winding down and building sustained focus.",
-  },
-  Moderate: {
-    color: "text-yellow-700", bg: "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700",
-    dot: "bg-yellow-500",
-    desc: "Normal engagement. Sustainable in balance. Most long-form content falls here.",
-  },
-  High: {
-    color: "text-orange-700", bg: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700",
-    dot: "bg-orange-500",
-    desc: "Activates the dopamine-reward loop more aggressively. Regular exposure raises your baseline stimulation threshold, making calm activities feel boring.",
-  },
-  Overstimulating: {
-    color: "text-red-700", bg: "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700",
-    dot: "bg-red-500",
-    desc: "Sustained consumption fragments attention. Associated with reduced ability to focus on single tasks, increased restlessness, and sleep disruption.",
-  },
+const HARM_INFO: Record<string, { color: string; bg: string; border: string; dot: string; desc: string }> = {
+  Calm:            { color: "#34d399", bg: "rgba(52,211,153,0.06)",  border: "rgba(52,211,153,0.2)",  dot: "#34d399", desc: "Supports recovery of attention. Good for winding down and building sustained focus." },
+  Moderate:        { color: "#a78bfa", bg: "rgba(167,139,250,0.06)", border: "rgba(167,139,250,0.2)", dot: "#a78bfa", desc: "Normal engagement. Sustainable in balance. Most long-form content falls here." },
+  High:            { color: "#fb923c", bg: "rgba(251,146,60,0.06)",  border: "rgba(251,146,60,0.2)",  dot: "#fb923c", desc: "Activates the dopamine-reward loop more aggressively. Regular exposure raises your baseline stimulation threshold." },
+  Overstimulating: { color: "#f87171", bg: "rgba(248,113,113,0.06)", border: "rgba(248,113,113,0.2)", dot: "#f87171", desc: "Sustained consumption fragments attention. Associated with reduced ability to focus, increased restlessness, and sleep disruption." },
 };
 
 const TIER_DESCS: Record<string, string> = {
-  Healthy: "Your content diet is well-balanced. Keep it up.",
-  "At Risk": "A significant portion of your recent content is highly stimulating. This can reduce your capacity for sustained focus over time.",
+  Healthy:    "Your content diet is well-balanced. Keep it up.",
+  "At Risk":  "A significant portion of your recent content is highly stimulating. This can reduce your capacity for sustained focus over time.",
   Fragmented: "Extended high-AFI consumption detected. Your attention span may already be affected. A recovery plan is strongly recommended.",
+};
+
+const TIER_CONFIG: Record<string, { color: string; border: string; bg: string }> = {
+  Healthy:    { color: "#34d399", border: "rgba(52,211,153,0.3)",  bg: "rgba(52,211,153,0.07)"  },
+  "At Risk":  { color: "#fb923c", border: "rgba(251,146,60,0.3)",  bg: "rgba(251,146,60,0.07)"  },
+  Fragmented: { color: "#f87171", border: "rgba(248,113,113,0.3)", bg: "rgba(248,113,113,0.07)" },
 };
 
 export default function WellbeingProfilePage() {
@@ -61,105 +45,118 @@ export default function WellbeingProfilePage() {
     const token = localStorage.getItem("token");
     if (!token) { setLoading(false); return; }
     const headers = { Authorization: `Bearer ${token}` };
-
     Promise.all([
       fetch("http://localhost:8000/wellbeing/profile", { headers }).then((r) => r.json()),
       fetch("http://localhost:8000/wellbeing/history", { headers }).then((r) => r.json()),
       fetch("http://localhost:8000/wellbeing/checkins", { headers }).then((r) => r.json()),
     ])
-      .then(([p, s, c]) => {
-        setProfile(p);
-        setSessions(Array.isArray(s) ? s : []);
-        setCheckins(Array.isArray(c) ? c : []);
-      })
+      .then(([p, s, c]) => { setProfile(p); setSessions(Array.isArray(s) ? s : []); setCheckins(Array.isArray(c) ? c : []); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  // Derive which harm tiers the user has been exposed to
-  const exposedTiers = profile
-    ? Object.entries(profile.content_mix)
-        .filter(([, v]) => v > 0)
-        .map(([k]) => k.charAt(0).toUpperCase() + k.slice(1).replace("stimulating", " stimulating"))
-    : [];
+  const tier = profile ? (TIER_CONFIG[profile.profile_tier] || TIER_CONFIG["At Risk"]) : null;
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Breadcrumb */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 text-sm text-gray-500">
-        <Link href="/wellbeing" className="hover:text-teal-600">Wellbeing</Link>
-        {" / "}
-        <span className="text-gray-800 dark:text-gray-200 font-medium">Attention Profile</span>
-      </div>
+    <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
+      <div style={{ position: "fixed", width: "55vw", height: "55vw", top: "30%", left: "40%", transform: "translate(-50%,-50%)", background: "radial-gradient(ellipse, rgba(45,212,191,0.05) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0 }} />
 
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-        {loading && <p className="text-gray-400">Loading…</p>}
+      <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "relative", zIndex: 1 }}>
 
-        {profile && (
+        {/* Breadcrumb */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)" }}>
+          <Link href="/" style={{ color: "var(--muted)", textDecoration: "none" }}>Home</Link>
+          <span>/</span>
+          <Link href="/wellbeing" style={{ color: "rgba(45,212,191,0.6)", textDecoration: "none" }}>Wellbeing</Link>
+          <span>/</span>
+          <span style={{ color: "#2dd4bf" }}>Attention Profile</span>
+        </div>
+
+        <div>
+          <h1 className="display-font" style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)", fontWeight: 600, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: "0.4rem" }}>
+            Attention Profile
+          </h1>
+          <p className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.9rem" }}>
+            A detailed breakdown of your content habits and attention health.
+          </p>
+        </div>
+
+        {loading && (
+          <div className="card-glass" style={{ padding: "3rem", textAlign: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "rgba(232,232,240,0.4)", fontSize: "0.875rem" }}>
+              <span className="spinner" style={{ borderTopColor: "#2dd4bf", borderColor: "rgba(255,255,255,0.1)" }} />
+              Loading profile…
+            </div>
+          </div>
+        )}
+
+        {profile && tier && (
           <>
-            {/* Profile tier card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <span className={`text-2xl font-bold text-gray-900 dark:text-white`}>
+            {/* Tier + stats */}
+            <div className="card-glass" style={{ padding: "1.75rem", borderColor: tier.border, background: tier.bg }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+                <span className="display-font" style={{ fontSize: "1.5rem", fontWeight: 600, color: "#ffffff" }}>
                   Profile: {profile.profile_tier}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold
-                  ${profile.profile_tier === "Healthy" ? "bg-emerald-100 text-emerald-700"
-                    : profile.profile_tier === "At Risk" ? "bg-amber-100 text-amber-700"
-                    : "bg-red-100 text-red-700"}`}>
+                <span className="mono" style={{
+                  padding: "0.2rem 0.7rem", borderRadius: "20px", fontSize: "0.8rem", fontWeight: 700,
+                  color: tier.color, background: `${tier.color}18`, border: `1px solid ${tier.color}44`,
+                }}>
                   {profile.attention_fragmentation_index.toFixed(0)} / 100 AFI
                 </span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-5">
+              <p className="sans" style={{ color: "rgba(232,232,240,0.5)", fontSize: "0.875rem", lineHeight: 1.65, marginBottom: "1.5rem" }}>
                 {TIER_DESCS[profile.profile_tier] || ""}
               </p>
-
-              <div className="grid grid-cols-3 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
                 {[
-                  { label: "Overstimulation ratio", value: `${(profile.overstim_ratio * 100).toFixed(0)}%` },
-                  { label: "High-AFI minutes (7d)", value: `${profile.weekly_high_afi_minutes.toFixed(0)} min` },
-                  { label: "Binge sessions", value: String(profile.binge_signals) },
+                  { label: "Overstimulation ratio", val: `${(profile.overstim_ratio * 100).toFixed(0)}%` },
+                  { label: "High-AFI minutes (7d)",  val: `${profile.weekly_high_afi_minutes.toFixed(0)} min` },
+                  { label: "Binge sessions",          val: String(profile.binge_signals) },
                 ].map((s) => (
-                  <div key={s.label} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-                    <p className="text-xs text-gray-400 mb-1">{s.label}</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{s.value}</p>
+                  <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", borderRadius: "10px", padding: "1rem", textAlign: "center" }}>
+                    <div className="sans" style={{ fontSize: "0.72rem", color: "rgba(232,232,240,0.4)", marginBottom: "0.4rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+                    <div className="mono" style={{ fontSize: "1.5rem", fontWeight: 700, color: "#ffffff" }}>{s.val}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Insights */}
-            {profile.insights.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Insights</h2>
-                <ul className="space-y-3">
+            {profile.insights?.length > 0 && (
+              <div className="card-glass" style={{ padding: "1.75rem" }}>
+                <div className="sans" style={{ fontSize: "0.72rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1rem" }}>Insights</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                   {profile.insights.map((ins, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
-                      <span className="mt-0.5 w-5 h-5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-600 flex items-center justify-center text-xs shrink-0">{i + 1}</span>
-                      {ins}
-                    </li>
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+                      <span style={{
+                        width: "1.4rem", height: "1.4rem", borderRadius: "50%", flexShrink: 0,
+                        background: "rgba(45,212,191,0.12)", border: "1px solid rgba(45,212,191,0.25)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "0.7rem", fontWeight: 700, color: "#2dd4bf", fontFamily: "monospace",
+                      }}>{i + 1}</span>
+                      <p className="sans" style={{ fontSize: "0.875rem", color: "rgba(232,232,240,0.7)", lineHeight: 1.6 }}>{ins}</p>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
 
-            {/* Content breakdown */}
+            {/* Recent sessions */}
             {sessions.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
-                  Recent content breakdown
-                </h2>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="card-glass" style={{ padding: "1.75rem" }}>
+                <div className="sans" style={{ fontSize: "0.72rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1rem" }}>Recent Content Breakdown</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxHeight: "16rem", overflowY: "auto" }}>
                   {sessions.slice(0, 20).map((s, i) => {
                     const info = HARM_INFO[s.harm_tier] || HARM_INFO.Moderate;
                     return (
-                      <div key={i} className="flex items-center gap-3 text-sm">
-                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${info.dot}`} />
-                        <span className="flex-1 text-gray-700 dark:text-gray-300 truncate">
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.85rem" }}>
+                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: info.dot, flexShrink: 0 }} />
+                        <span className="sans" style={{ flex: 1, color: "rgba(232,232,240,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {s.video_name || "Untitled"}
                         </span>
-                        <span className="text-xs text-gray-400">{s.final_afi.toFixed(0)}</span>
-                        <span className={`text-xs font-medium ${info.color}`}>{s.harm_tier}</span>
+                        <span className="mono" style={{ fontSize: "0.8rem", color: "rgba(232,232,240,0.4)" }}>{s.final_afi.toFixed(0)}</span>
+                        <span className="sans" style={{ fontSize: "0.78rem", fontWeight: 600, color: info.color, minWidth: "5rem", textAlign: "right" }}>{s.harm_tier}</span>
                       </div>
                     );
                   })}
@@ -167,22 +164,19 @@ export default function WellbeingProfilePage() {
               </div>
             )}
 
-            {/* Harm explanation cards */}
+            {/* Harm tier explanations */}
             <div>
-              <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">
+              <div className="sans" style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(232,232,240,0.5)", marginBottom: "1rem" }}>
                 What each tier means for your attention
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "0.75rem" }}>
                 {Object.entries(HARM_INFO).map(([tier, info]) => (
-                  <div key={tier} className={`rounded-2xl border p-5 ${info.bg}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`w-3 h-3 rounded-full ${info.dot}`} />
-                      <span className={`font-semibold text-sm ${info.color}`}>{tier}</span>
-                      {exposedTiers.includes(tier) && (
-                        <span className="ml-auto text-xs text-gray-400">in your history</span>
-                      )}
+                  <div key={tier} style={{ borderRadius: "12px", padding: "1.25rem", background: info.bg, border: `1px solid ${info.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                      <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: info.dot }} />
+                      <span className="sans" style={{ fontSize: "0.85rem", fontWeight: 600, color: info.color }}>{tier}</span>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{info.desc}</p>
+                    <p className="sans" style={{ fontSize: "0.78rem", color: "rgba(232,232,240,0.5)", lineHeight: 1.6 }}>{info.desc}</p>
                   </div>
                 ))}
               </div>
@@ -190,39 +184,46 @@ export default function WellbeingProfilePage() {
 
             {/* Focus quality log */}
             {checkins.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
-                  Focus quality log
-                </h2>
-                <div className="grid grid-cols-7 gap-2">
-                  {checkins.slice(0, 7).reverse().map((c, i) => (
-                    <div key={i} className="text-center">
-                      <div className={`w-full aspect-square rounded-xl flex items-center justify-center text-sm font-bold
-                        ${c.focus_quality >= 4 ? "bg-emerald-100 text-emerald-700"
-                          : c.focus_quality >= 3 ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"}`}>
-                        {c.focus_quality}/5
+              <div className="card-glass" style={{ padding: "1.75rem" }}>
+                <div className="sans" style={{ fontSize: "0.72rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1rem" }}>Focus Quality Log</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "0.5rem" }}>
+                  {checkins.slice(0, 7).reverse().map((c, i) => {
+                    const scoreColor = c.focus_quality >= 4 ? "#34d399" : c.focus_quality >= 3 ? "#fb923c" : "#f87171";
+                    return (
+                      <div key={i} style={{ textAlign: "center" }}>
+                        <div style={{
+                          aspectRatio: "1", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center",
+                          background: `${scoreColor}15`, border: `1px solid ${scoreColor}40`,
+                          fontFamily: "monospace", fontSize: "0.8rem", fontWeight: 700, color: scoreColor,
+                        }}>
+                          {c.focus_quality}/5
+                        </div>
+                        <div className="sans" style={{ fontSize: "0.65rem", color: "rgba(232,232,240,0.35)", marginTop: "0.3rem" }}>
+                          {new Date(c.created_at).toLocaleDateString(undefined, { weekday: "short" })}
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(c.created_at).toLocaleDateString(undefined, { weekday: "short" })}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            <div className="flex justify-center pt-2">
-              <Link
-                href="/wellbeing/plan"
-                className="px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-semibold transition-colors"
-              >
+            {/* CTA */}
+            <div style={{ display: "flex", justifyContent: "center", paddingBottom: "1rem" }}>
+              <Link href="/wellbeing/plan" style={{
+                display: "inline-block",
+                background: "linear-gradient(135deg, #2dd4bf, #14b8a6)",
+                color: "#05050f", textDecoration: "none",
+                padding: "0.75rem 2rem", borderRadius: "8px",
+                fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 700,
+                boxShadow: "0 4px 16px rgba(45,212,191,0.25)",
+              }}>
                 View your recovery plan →
               </Link>
             </div>
           </>
         )}
       </div>
-    </main>
+    </div>
   );
 }

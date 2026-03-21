@@ -89,7 +89,7 @@ def get_profile(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    user_id = current_user["user_id"]
+    user_id = current_user["sub"]
     data = _get_or_build_profile(user_id, db)
     p = data["profile"]
     cm = data["content_mix"]
@@ -113,12 +113,12 @@ def get_plan(
     current_user=Depends(get_current_user),
 ):
     db_profile = db.query(WellbeingProfile).filter(
-        WellbeingProfile.user_id == current_user["user_id"]
+        WellbeingProfile.user_id == current_user["sub"]
     ).first()
 
     if not db_profile or not db_profile.plan_json:
         # Build from scratch
-        data = _get_or_build_profile(current_user["user_id"], db)
+        data = _get_or_build_profile(current_user["sub"], db)
         return data["plan"]
 
     return json.loads(db_profile.plan_json)
@@ -130,7 +130,7 @@ def update_plan(
     current_user=Depends(get_current_user),
 ):
     """Regenerate plan from latest data."""
-    data = _get_or_build_profile(current_user["user_id"], db)
+    data = _get_or_build_profile(current_user["sub"], db)
     return {"status": "updated", "plan": data["plan"]}
 
 
@@ -142,7 +142,7 @@ def get_history(
     """Return session-by-session classified history."""
     sessions = (
         db.query(AnalysisResult)
-        .filter(AnalysisResult.user_id == current_user["user_id"])
+        .filter(AnalysisResult.user_id == current_user["sub"])
         .order_by(AnalysisResult.created_at.desc())
         .limit(100)
         .all()
@@ -165,7 +165,7 @@ def checkin(
         raise HTTPException(status_code=422, detail="focus_quality must be 1–5")
     now = datetime.utcnow()
     entry = WellbeingCheckin(
-        user_id=current_user["user_id"],
+        user_id=current_user["sub"],
         focus_quality=body.focus_quality,
         notes=body.notes,
         created_at=now,
@@ -183,7 +183,7 @@ def get_checkins(
     """Return last 30 focus check-in entries for the user."""
     rows = (
         db.query(WellbeingCheckin)
-        .filter(WellbeingCheckin.user_id == current_user["user_id"])
+        .filter(WellbeingCheckin.user_id == current_user["sub"])
         .order_by(WellbeingCheckin.created_at.desc())
         .limit(30)
         .all()

@@ -138,9 +138,9 @@ export default function HomePage() {
             marginBottom: "4rem",
           }}>
             {[
-              { v: "2.3B", l: "Videos Analyzed" },
-              { v: "94%",  l: "Accuracy Rate" },
-              { v: "<2s",  l: "Analysis Speed" },
+              { v: "1.3K", l: "Videos Analyzed" },
+              { v: "90%",  l: "Accuracy Rate" },
+              { v: "<10s",  l: "Analysis Speed" },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
                 <div className="mono" style={{ fontSize: "1.3rem", fontWeight: 700, color: "#a78bfa", marginBottom: "0.2rem" }}>

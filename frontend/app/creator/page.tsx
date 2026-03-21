@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface CreatorHistoryItem {
   id: number;
@@ -11,20 +12,32 @@ interface CreatorHistoryItem {
   created_at: string;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  "Very High": "bg-emerald-100 text-emerald-800",
-  High: "bg-blue-100 text-blue-800",
-  Medium: "bg-yellow-100 text-yellow-800",
-  Low: "bg-red-100 text-red-800",
-};
+function getCaptivationColor(score: number) {
+  if (score >= 75) return "#34d399";
+  if (score >= 50) return "#a78bfa";
+  if (score >= 30) return "#fb923c";
+  return "#f87171";
+}
+
+function getCategoryStyle(cat: string): { color: string; bg: string } {
+  switch (cat) {
+    case "Very High": return { color: "#34d399", bg: "rgba(52,211,153,0.1)" };
+    case "High":      return { color: "#818cf8", bg: "rgba(129,140,248,0.1)" };
+    case "Medium":    return { color: "#fb923c", bg: "rgba(251,146,60,0.1)" };
+    default:          return { color: "#f87171", bg: "rgba(248,113,113,0.1)" };
+  }
+}
 
 export default function CreatorStudioPage() {
   const [history, setHistory] = useState<CreatorHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { setLoading(false); return; }
+    setLoggedIn(true);
     fetch("http://localhost:8000/creator/history", {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -34,133 +47,225 @@ export default function CreatorStudioPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const avgCaptivation =
-    history.length > 0
-      ? (history.reduce((s, h) => s + h.captivation_score, 0) / history.length).toFixed(1)
-      : null;
+  const avgCaptivation = history.length > 0
+    ? (history.reduce((s, h) => s + h.captivation_score, 0) / history.length).toFixed(1)
+    : null;
   const best = history.length > 0
     ? history.reduce((a, b) => (a.captivation_score > b.captivation_score ? a : b))
     : null;
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-                  Creator Studio
-                </span>
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Improve Your Content
-              </h1>
-              <p className="mt-2 text-gray-500 dark:text-gray-400 max-w-lg">
-                Upload a video to find out how captivating it is, how it matches
-                current platform trends, and exactly what to change to improve it.
-              </p>
-            </div>
-            <Link
-              href="/creator/upload"
-              className="shrink-0 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors"
-            >
-              Analyze a video →
-            </Link>
-          </div>
+    <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
 
-          {/* Stats row */}
-          {history.length > 0 && (
-            <div className="mt-8 grid grid-cols-3 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Videos analyzed
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                  {history.length}
-                </p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Avg captivation
-                </p>
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
-                  {avgCaptivation ?? "—"}
-                </p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Best performing
-                </p>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-1 truncate">
-                  {best ? (best.video_name || "Untitled") : "—"}
-                </p>
-              </div>
-            </div>
-          )}
+      {/* Glow — indigo tint for creator */}
+      <div style={{
+        position: "fixed",
+        width: "55vw", height: "55vw",
+        top: "30%", left: "60%",
+        transform: "translate(-50%, -50%)",
+        background: "radial-gradient(ellipse, rgba(129,140,248,0.06) 0%, transparent 70%)",
+        pointerEvents: "none", zIndex: 0,
+      }} />
+
+      <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.75rem", position: "relative", zIndex: 1 }}>
+
+        {/* Breadcrumb */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)" }}>
+          <Link href="/" style={{ color: "var(--muted)", textDecoration: "none" }}>Home</Link>
+          <span>/</span>
+          <span style={{ color: "#818cf8" }}>Creator Studio</span>
         </div>
-      </div>
 
-      {/* Recent analyses */}
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-          Recent analyses
-        </h2>
-
-        {loading ? (
-          <p className="text-gray-400">Loading…</p>
-        ) : history.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 p-12 text-center">
-            <p className="text-gray-400 dark:text-gray-500 text-sm">
-              No analyses yet. Upload your first video to get started.
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1.5rem" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+              <span style={{
+                fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.2em",
+                textTransform: "uppercase", color: "#818cf8",
+                background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.2)",
+                padding: "0.25rem 0.6rem", borderRadius: "4px",
+              }}>Creator Studio</span>
+            </div>
+            <h1 className="display-font" style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 600, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: "0.5rem" }}>
+              Improve Your Content
+            </h1>
+            <p className="sans" style={{ color: "rgba(232,232,240,0.5)", fontSize: "0.95rem", maxWidth: "36rem", lineHeight: 1.7 }}>
+              Analyze your videos for captivation score, platform trend alignment, and get
+              actionable recommendations to improve performance.
             </p>
-            <Link
-              href="/creator/upload"
-              className="mt-4 inline-block px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-            >
-              Upload video
-            </Link>
           </div>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700">
-                <tr>
-                  <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">Video</th>
-                  <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Captivation</th>
-                  <th className="px-5 py-3 text-center font-medium text-gray-500 dark:text-gray-400">Category</th>
-                  <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Trend match</th>
-                  <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {history.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
-                    <td className="px-5 py-3 text-gray-800 dark:text-gray-200 truncate max-w-xs">
-                      {item.video_name || "Untitled"}
-                    </td>
-                    <td className="px-5 py-3 text-right font-semibold text-indigo-600 dark:text-indigo-400">
-                      {item.captivation_score.toFixed(1)}
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${CATEGORY_COLORS[item.captivation_category] || "bg-gray-100 text-gray-700"}`}>
-                        {item.captivation_category}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-right text-gray-600 dark:text-gray-400">
-                      {item.trend_match_score.toFixed(0)}%
-                    </td>
-                    <td className="px-5 py-3 text-right text-gray-400 dark:text-gray-500 text-xs">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <Link href="/creator/upload" style={{
+            display: "inline-flex", alignItems: "center", gap: "0.5rem",
+            background: "linear-gradient(135deg, #818cf8, #6366f1)",
+            color: "#ffffff", textDecoration: "none",
+            padding: "0.7rem 1.4rem", borderRadius: "8px",
+            fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600,
+            boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
+            transition: "opacity 0.2s ease", flexShrink: 0,
+          }}>
+            Analyze a video →
+          </Link>
+        </div>
+
+        {/* Not logged in state */}
+        {!loggedIn && !loading && (
+          <div className="card-glass" style={{ padding: "3rem", textAlign: "center" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>◈</div>
+            <p className="sans" style={{ color: "rgba(232,232,240,0.6)", marginBottom: "1.5rem" }}>
+              Sign in to access Creator Studio and track your video performance.
+            </p>
+            <Link href="/login" style={{
+              display: "inline-block",
+              background: "linear-gradient(135deg, #818cf8, #6366f1)",
+              color: "#fff", textDecoration: "none",
+              padding: "0.6rem 1.4rem", borderRadius: "8px",
+              fontFamily: "'Inter', sans-serif", fontSize: "0.875rem", fontWeight: 600,
+            }}>
+              Sign in →
+            </Link>
           </div>
         )}
+
+        {/* Stats row — only when logged in and has data */}
+        {loggedIn && history.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+            {[
+              { label: "Videos Analyzed", val: history.length, unit: "", accent: "#818cf8" },
+              { label: "Avg Captivation",  val: avgCaptivation ?? "—", unit: "/100", accent: "#a78bfa" },
+              { label: "Best Performing",  val: best ? (best.video_name || "Untitled").slice(0, 14) + "…" : "—", unit: "", accent: "#34d399" },
+            ].map((s, i) => (
+              <div key={i} className="card-glass" style={{ padding: "1.5rem" }}>
+                <div className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.8rem", marginBottom: "0.5rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                  {s.label}
+                </div>
+                <div className="mono" style={{ fontSize: "1.75rem", fontWeight: 700, color: s.accent }}>
+                  {s.val}
+                  {s.unit && <span className="sans" style={{ fontSize: "0.8rem", color: "rgba(232,232,240,0.35)", marginLeft: "0.25rem" }}>{s.unit}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* History table */}
+        {loggedIn && (
+          <div>
+            <h2 className="sans" style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(232,232,240,0.5)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "1rem" }}>
+              Recent Analyses
+            </h2>
+
+            {loading ? (
+              <div className="card-glass" style={{ padding: "3rem", textAlign: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "rgba(232,232,240,0.4)", fontSize: "0.875rem" }}>
+                  <span className="spinner" style={{ borderTopColor: "#818cf8", borderColor: "rgba(255,255,255,0.1)" }} />
+                  Loading analyses…
+                </div>
+              </div>
+            ) : history.length === 0 ? (
+              <div className="card-glass" style={{ padding: "4rem", textAlign: "center" }}>
+                <div style={{
+                  width: "3.5rem", height: "3.5rem", borderRadius: "12px",
+                  background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.2)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "0 auto 1.25rem", fontSize: "1.4rem", color: "#818cf8",
+                }}>◈</div>
+                <p className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+                  No analyses yet. Upload your first video to get started.
+                </p>
+                <Link href="/creator/upload" style={{
+                  display: "inline-block",
+                  background: "linear-gradient(135deg, #818cf8, #6366f1)",
+                  color: "#fff", textDecoration: "none",
+                  padding: "0.6rem 1.4rem", borderRadius: "8px",
+                  fontFamily: "'Inter', sans-serif", fontSize: "0.875rem", fontWeight: 600,
+                }}>
+                  Upload video
+                </Link>
+              </div>
+            ) : (
+              <div className="card-glass" style={{ overflow: "hidden", padding: "1rem 0" }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      {["Video", "Captivation", "Category", "Trend Match", "Date"].map((h) => (
+                        <th key={h} className="sans" style={{ color: "rgba(232,232,240,0.4)", fontSize: "0.8rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((item) => {
+                      const catStyle = getCategoryStyle(item.captivation_category);
+                      return (
+                        <tr key={item.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
+                          <td>
+                            <div className="sans" style={{ fontWeight: 500, fontSize: "0.95rem", maxWidth: "240px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>
+                              {item.video_name || "Untitled"}
+                            </div>
+                          </td>
+                          <td>
+                            <span className="mono" style={{ fontSize: "1.2rem", fontWeight: 700, color: getCaptivationColor(item.captivation_score) }}>
+                              {item.captivation_score.toFixed(1)}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{
+                              display: "inline-block",
+                              padding: "0.2rem 0.6rem", borderRadius: "4px",
+                              fontSize: "0.78rem", fontWeight: 600,
+                              color: catStyle.color, background: catStyle.bg,
+                              border: `1px solid ${catStyle.color}33`,
+                            }}>
+                              {item.captivation_category}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <div style={{ flex: 1, height: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "2px", maxWidth: "60px" }}>
+                                <div style={{ height: "100%", width: `${item.trend_match_score}%`, background: "#818cf8", borderRadius: "2px" }} />
+                              </div>
+                              <span className="mono" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.6)" }}>
+                                {item.trend_match_score.toFixed(0)}%
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.4)" }}>
+                              {new Date(item.created_at).toLocaleDateString()}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Info cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
+          {[
+            { icon: "◈", color: "#818cf8", title: "Captivation Score",    desc: "Hook strength, pace variance, and text density fit — separate from AFI." },
+            { icon: "◉", color: "#a78bfa", title: "Trend Matching",        desc: "How well your video aligns with current platform benchmarks." },
+            { icon: "◆", color: "#34d399", title: "Improvement Engine",    desc: "Prioritised, actionable recommendations with predicted score delta." },
+          ].map((c, i) => (
+            <div key={i} className="card-glass card-hover" style={{ padding: "1.75rem" }}>
+              <div style={{
+                fontSize: "1.3rem", color: c.color, marginBottom: "1rem",
+                width: "2.75rem", height: "2.75rem",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: `${c.color}18`, borderRadius: "10px",
+                border: `1px solid ${c.color}33`,
+              }}>{c.icon}</div>
+              <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", color: "#ffffff", marginBottom: "0.5rem" }}>{c.title}</div>
+              <div className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.82rem", lineHeight: 1.6 }}>{c.desc}</div>
+            </div>
+          ))}
+        </div>
+
       </div>
-    </main>
+    </div>
   );
 }

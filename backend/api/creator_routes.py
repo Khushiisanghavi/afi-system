@@ -67,7 +67,7 @@ async def creator_analyze(
         db_analysis = AnalysisResult(
             video_path=video_path,
             video_name=file.filename,
-            user_id=current_user["user_id"],
+            user_id=current_user["sub"],
             visual_score=visual_data.get("visual_score", 0),
             audio_score=audio_metrics.get("audio_afi_score", 0),
             text_score=text_metrics.get("text_afi_score", 0),
@@ -117,7 +117,7 @@ async def creator_analyze(
         # ── Save creator analysis ─────────────────────────────────────────────
         db_creator = CreatorAnalysis(
             analysis_id=db_analysis.id,
-            user_id=current_user["user_id"],
+            user_id=current_user["sub"],
             video_name=file.filename,
             captivation_score=cap["captivation_score"],
             captivation_category=cap["captivation_category"],
@@ -170,7 +170,7 @@ def creator_history(
 ):
     results = (
         db.query(CreatorAnalysis)
-        .filter(CreatorAnalysis.user_id == current_user["user_id"])
+        .filter(CreatorAnalysis.user_id == current_user["sub"])
         .order_by(CreatorAnalysis.created_at.desc())
         .limit(50)
         .all()
@@ -186,7 +186,7 @@ def creator_result(
 ):
     result = db.query(CreatorAnalysis).filter(
         CreatorAnalysis.id == result_id,
-        CreatorAnalysis.user_id == current_user["user_id"],
+        CreatorAnalysis.user_id == current_user["sub"],
     ).first()
     if not result:
         raise HTTPException(status_code=404, detail="Result not found")

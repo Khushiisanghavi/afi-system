@@ -3,18 +3,39 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchHistory = async () => {
+      const token = localStorage.getItem("token");
+
       try {
-        // /history/all is the unprotected endpoint (no JWT required)
-        const response = await axios.get("http://127.0.0.1:8000/history/all");
-        setHistory(response.data);
-      } catch (error) {
+        if (token) {
+          // Logged in — fetch only this user's history
+          setIsLoggedIn(true);
+          const response = await axios.get("http://localhost:8000/history", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setHistory(response.data);
+        } else {
+          // Not logged in — fetch all (dev fallback)
+          setIsLoggedIn(false);
+          const response = await axios.get("http://localhost:8000/history/all");
+          setHistory(response.data);
+        }
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          // Token expired or invalid — clear and redirect
+          localStorage.removeItem("token");
+          localStorage.removeItem("user_name");
+          router.push("/login");
+        }
         console.error("Error fetching history:", error);
       } finally {
         setLoading(false);
@@ -73,12 +94,19 @@ export default function HistoryPage() {
               Analysis History
             </h1>
             <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.95rem" }}>
-              View previously analyzed videos and their AFI scores.
+              {isLoggedIn ? "Your personal analysis history." : "All analyses (sign in to see only yours)."}
             </p>
           </div>
-          <Link href="/" className="btn-primary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.1rem" }}>
-            + Analyze Video
-          </Link>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            {!isLoggedIn && (
+              <Link href="/login" className="btn-secondary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.1rem" }}>
+                Sign in for your history
+              </Link>
+            )}
+            <Link href="/" className="btn-primary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.1rem" }}>
+              + Analyze Video
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -147,9 +175,9 @@ export default function HistoryPage() {
       {/* Footer nav */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
         {[
-          { href: "/results", icon: "←", label: "Latest Results",  desc: "View most recent analysis" },
-          { href: "/compare", icon: "⇄", label: "Compare Videos",  desc: "Side-by-side comparison" },
-          { href: "/wellness",icon: "◎", label: "Wellness",         desc: "Media health overview" },
+          { href: "/results",   icon: "←",  label: "Latest Results",  desc: "View most recent analysis" },
+          { href: "/compare",   icon: "⇄",  label: "Compare Videos",  desc: "Side-by-side comparison" },
+          { href: "/wellness",  icon: "◎",  label: "Wellness",         desc: "Media health overview" },
         ].map((n) => (
           <Link key={n.href} href={n.href} style={{ textDecoration: "none" }}>
             <div className="card-glass card-hover" style={{ padding: "1.5rem" }}>

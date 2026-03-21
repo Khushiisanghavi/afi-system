@@ -23,3 +23,5 @@ def analyze_visual_component(video_path):
         "visual_score": overall_visual_score,
         "timeline": timeline
     }
+# Alias for compatibility with creator_routes
+run_visual_pipeline = analyze_visual_component
