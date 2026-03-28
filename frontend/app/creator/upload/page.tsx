@@ -1,165 +1,239 @@
 "use client";
+import { useState, useRef, DragEvent } from "react";
+import { useRouter } from "next/navigation";
 
-import { useEffect, useState } from "react";
-import axios from "axios";
-import Link from "next/link";
+const STAGES = [
+  "Uploading video…",
+  "Running AFI analysis…",
+  "Computing captivation score…",
+  "Matching against trend profiles…",
+  "Generating recommendations…",
+];
 
-export default function HistoryPage() {
-  const [history, setHistory] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function CreatorUploadPage() {
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [stageIdx, setStageIdx] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        // /history/all is the unprotected endpoint (no JWT required)
-        const response = await axios.get("http://127.0.0.1:8000/history/all");
-        setHistory(response.data);
-      } catch (error) {
-        console.error("Error fetching history:", error);
-      } finally {
-        setLoading(false);
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(false);
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) setFile(dropped);
+  }
+
+  async function handleAnalyze() {
+    if (!file) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("You must be logged in to use Creator Studio. Please sign in first.");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx = Math.min(idx + 1, STAGES.length - 1);
+      setStageIdx(idx);
+    }, 2000);
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+
+      const res = await fetch("http://localhost:8000/creator/analyze", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+
+      clearInterval(interval);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Analysis failed" }));
+        throw new Error(err.detail || "Analysis failed");
       }
-    };
-    fetchHistory();
-  }, []);
 
-  function getCategoryClass(cat: string) {
-    if (cat === "Calm") return "badge-calm";
-    if (cat === "Moderate") return "badge-moderate";
-    if (cat === "High") return "badge-high";
-    return "badge-over";
-  }
-
-  function getScoreColor(score: number) {
-    if (score >= 80) return "#f87171";
-    if (score >= 60) return "#fb923c";
-    if (score >= 40) return "#facc15";
-    return "#34d399";
-  }
-
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", color: "var(--muted)", fontSize: "0.875rem" }}>
-          <span className="spinner" style={{ borderTopColor: "var(--muted)", borderColor: "rgba(255,255,255,0.1)" }} />
-          Loading history...
-        </div>
-      </div>
-    );
-  }
-
-  if (!history.length) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "1rem" }}>
-        <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>No history available yet.</div>
-        <Link href="/" className="btn-primary" style={{ fontSize: "0.82rem" }}>← Analyze a Video</Link>
-      </div>
-    );
+      const data = await res.json();
+      localStorage.setItem("creatorResult", JSON.stringify(data));
+      router.push("/creator/results");
+    } catch (e: unknown) {
+      clearInterval(interval);
+      setUploading(false);
+      setStageIdx(0);
+      setError(e instanceof Error ? e.message : "Unknown error occurred");
+    }
   }
 
   return (
-    <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: "640px" }}>
 
-      {/* HEADER */}
+      {/* Breadcrumb */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)" }}>
+        <a href="/creator" style={{ color: "var(--muted)", textDecoration: "none" }}>Creator Studio</a>
+        <span>/</span>
+        <span style={{ color: "var(--foreground)" }}>Upload</span>
+      </div>
+
+      {/* Header */}
       <div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)", marginBottom: "1rem" }}>
-          <Link href="/" style={{ color: "var(--muted)", textDecoration: "none" }}>Home</Link>
-          <span>/</span>
-          <span style={{ color: "var(--foreground)" }}>History</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+        <h1 className="display-font" style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "0.35rem", color: "#ffffff" }}>
+          Analyze your video
+        </h1>
+        <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.95rem" }}>
+          Upload a video to get your captivation score and improvement recommendations.
+        </p>
+      </div>
+
+      {/* Drop zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        onClick={() => !uploading && inputRef.current?.click()}
+        className="card-glass"
+        style={{
+          padding: "3rem 2rem",
+          textAlign: "center",
+          cursor: uploading ? "default" : "pointer",
+          border: dragging
+            ? "1.5px dashed #a78bfa"
+            : "1.5px dashed rgba(167,139,250,0.25)",
+          background: dragging ? "rgba(167,139,250,0.06)" : undefined,
+          transition: "all 0.2s ease",
+        }}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept="video/*"
+          style={{ display: "none" }}
+          onChange={(e) => e.target.files?.[0] && setFile(e.target.files[0])}
+        />
+
+        {file ? (
           <div>
-            <h1 className="display-font" style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "0.35rem", color: "#ffffff" }}>
-              Analysis History
-            </h1>
-            <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.95rem" }}>
-              View previously analyzed videos and their AFI scores.
+            <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🎬</div>
+            <p className="sans" style={{ fontWeight: 600, color: "#a78bfa", fontSize: "1rem", marginBottom: "0.25rem" }}>
+              {file.name}
+            </p>
+            <p className="sans" style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+              {(file.size / 1024 / 1024).toFixed(1)} MB
+            </p>
+            {!uploading && (
+              <p className="sans" style={{ color: "var(--muted)", fontSize: "0.78rem", marginTop: "0.75rem" }}>
+                Click to choose a different file
+              </p>
+            )}
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>📁</div>
+            <p className="sans" style={{ fontWeight: 600, color: "#ffffff", fontSize: "1rem", marginBottom: "0.4rem" }}>
+              Drop your video here, or click to browse
+            </p>
+            <p className="sans" style={{ color: "var(--muted)", fontSize: "0.82rem" }}>
+              MP4, MOV, AVI, WebM supported
             </p>
           </div>
-          <Link href="/" className="btn-primary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.1rem" }}>
-            + Analyze Video
-          </Link>
+        )}
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="card-glass" style={{ padding: "1rem 1.25rem", borderColor: "rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.06)" }}>
+          <p className="sans" style={{ color: "#f87171", fontSize: "0.9rem" }}>{error}</p>
+          {error.includes("logged in") && (
+            <a href="/login" className="sans" style={{ color: "#a78bfa", fontSize: "0.85rem", marginTop: "0.5rem", display: "inline-block" }}>
+              Go to login →
+            </a>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Summary stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
-        {[
-          { label: "Total Analyzed",  val: history.length, unit: "videos" },
-          { label: "Avg AFI",          val: history.length ? (history.reduce((s, h) => s + (h.final_afi || 0), 0) / history.length).toFixed(1) : 0, unit: "/100" },
-          { label: "High Stimulation", val: history.filter((h) => (h.final_afi || 0) >= 70).length, unit: "videos" },
-        ].map((s, i) => (
-          <div key={i} className="card-glass" style={{ padding: "1.5rem" }}>
-            <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.9rem", marginBottom: "0.5rem" }}>{s.label}</div>
-            <div className="mono" style={{ fontSize: "2rem", fontWeight: 700, color: "#ffffff" }}>
-              {s.val}<span className="sans" style={{ fontSize: "0.85rem", color: "var(--muted-mid)", fontWeight: 500, marginLeft: "0.3rem" }}>{s.unit}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* TABLE */}
-      <div className="card-glass" style={{ overflow: "hidden", padding: "1rem 0" }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Video</th>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>AFI Score</th>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Category</th>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Visual</th>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((item) => (
-              <tr key={item.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
-                <td>
-                  <div className="sans" style={{ fontWeight: 500, fontSize: "0.95rem", maxWidth: "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>
-                    {item.video_name || item.url || item.video_path || "Video"}
-                  </div>
-                </td>
-                <td>
-                  <span className="mono" style={{ fontSize: "1.25rem", fontWeight: 700, color: getScoreColor(item.final_afi || 0) }}>
-                    {item.final_afi?.toFixed(2)}
-                  </span>
-                </td>
-                <td>
-                  <span className={`tag-badge ${getCategoryClass(item.category)}`} style={{ borderRadius: "4px" }}>
-                    {item.category}
-                  </span>
-                </td>
-                <td>
-                  <span className="mono" style={{ fontSize: "0.9rem", color: "var(--muted-mid)" }}>
-                    {item.visual_score?.toFixed(1) ?? "—"}
-                  </span>
-                </td>
-                <td>
-                  <span className="sans" style={{ fontSize: "0.9rem", color: "var(--muted-mid)" }}>
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </span>
-                </td>
-              </tr>
+      {/* Progress stages */}
+      {uploading && (
+        <div className="card-glass" style={{ padding: "1.5rem" }}>
+          <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Processing
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {STAGES.map((stage, i) => (
+              <div key={stage} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <div style={{
+                  width: "1.5rem", height: "1.5rem", borderRadius: "50%", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "0.7rem", fontWeight: 700,
+                  background: i < stageIdx
+                    ? "rgba(52,211,153,0.2)"
+                    : i === stageIdx
+                    ? "rgba(167,139,250,0.2)"
+                    : "rgba(255,255,255,0.05)",
+                  border: i < stageIdx
+                    ? "1px solid rgba(52,211,153,0.4)"
+                    : i === stageIdx
+                    ? "1px solid rgba(167,139,250,0.5)"
+                    : "1px solid rgba(255,255,255,0.08)",
+                  color: i < stageIdx ? "#34d399" : i === stageIdx ? "#a78bfa" : "var(--muted)",
+                }}>
+                  {i < stageIdx ? "✓" : i + 1}
+                </div>
+                <span className="sans" style={{
+                  fontSize: "0.9rem",
+                  color: i === stageIdx ? "#ffffff" : i < stageIdx ? "#34d399" : "var(--muted)",
+                  fontWeight: i === stageIdx ? 600 : 400,
+                }}>
+                  {stage}
+                </span>
+                {i === stageIdx && (
+                  <span className="spinner" style={{
+                    marginLeft: "auto",
+                    width: "1rem", height: "1rem",
+                    borderColor: "rgba(167,139,250,0.2)",
+                    borderTopColor: "#a78bfa",
+                  }} />
+                )}
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+          <p className="sans" style={{ color: "var(--muted)", fontSize: "0.78rem", marginTop: "1.25rem" }}>
+            Analysis takes 30–90 seconds depending on video length.
+          </p>
+        </div>
+      )}
 
-      {/* Footer nav */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
-        {[
-          { href: "/results", icon: "←", label: "Latest Results",  desc: "View most recent analysis" },
-          { href: "/compare", icon: "⇄", label: "Compare Videos",  desc: "Side-by-side comparison" },
-          { href: "/wellness",icon: "◎", label: "Wellness",         desc: "Media health overview" },
-        ].map((n) => (
-          <Link key={n.href} href={n.href} style={{ textDecoration: "none" }}>
-            <div className="card-glass card-hover" style={{ padding: "1.5rem" }}>
-              <div className="mono" style={{ color: "var(--primary)", fontSize: "1.1rem", marginBottom: "0.5rem" }}>{n.icon}</div>
-              <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.3rem", color: "#ffffff" }}>{n.label}</div>
-              <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem" }}>{n.desc}</div>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {/* Actions */}
+      {!uploading && (
+        <div style={{ display: "flex", gap: "0.75rem" }}>
+          <a
+            href="/creator"
+            className="btn-secondary"
+            style={{ flex: 1, textAlign: "center", padding: "0.75rem", fontSize: "0.9rem", textDecoration: "none" }}
+          >
+            Cancel
+          </a>
+          <button
+            onClick={handleAnalyze}
+            disabled={!file}
+            className="btn-primary"
+            style={{
+              flex: 2,
+              padding: "0.75rem",
+              fontSize: "0.9rem",
+              opacity: file ? 1 : 0.4,
+              cursor: file ? "pointer" : "not-allowed",
+              border: "none",
+            }}
+          >
+            Analyze video →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

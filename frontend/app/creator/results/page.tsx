@@ -34,13 +34,6 @@ interface AFIResult {
 }
 interface FullResult { afi: AFIResult; creator: CreatorResult; }
 
-const CAT_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
-  "Very High": { bg: "bg-emerald-50", text: "text-emerald-700", ring: "#10b981" },
-  High:        { bg: "bg-blue-50",    text: "text-blue-700",    ring: "#3b82f6" },
-  Medium:      { bg: "bg-yellow-50",  text: "text-yellow-700",  ring: "#f59e0b" },
-  Low:         { bg: "bg-red-50",     text: "text-red-700",     ring: "#ef4444" },
-};
-
 const DIM_LABELS: Record<string, string> = {
   scene_change_rate: "Scene pacing",
   tempo_bpm:         "Music tempo",
@@ -48,7 +41,6 @@ const DIM_LABELS: Record<string, string> = {
   text_area_ratio:   "Text overlay density",
   rms_energy:        "Audio energy",
 };
-
 const DIM_ICONS: Record<string, string> = {
   scene_change_rate: "🎬",
   tempo_bpm:         "🎵",
@@ -57,33 +49,33 @@ const DIM_ICONS: Record<string, string> = {
   rms_energy:        "🔊",
 };
 
-function ScoreRing({ score, color, size = 160 }: { score: number; color: string; size?: number }) {
-  const r = size / 2 - 14;
+function ScoreRing({ score, color, size = 140 }: { score: number; color: string; size?: number }) {
+  const r = size / 2 - 12;
   const circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
   return (
-    <svg width={size} height={size} className="-rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={10} />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke={color} strokeWidth={10}
-        strokeDasharray={`${dash} ${circ}`}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dasharray 1s ease" }}
-      />
+    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={10} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={10}
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+        style={{ transition: "stroke-dasharray 1s ease" }} />
     </svg>
   );
 }
 
-function Bar({ value, max = 1, color = "bg-indigo-500" }: { value: number; max?: number; color?: string }) {
+function MiniBar({ value, color = "#a78bfa" }: { value: number; color?: string }) {
   return (
-    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-      <div
-        className={`h-full ${color} rounded-full transition-all duration-700`}
-        style={{ width: `${Math.min((value / max) * 100, 100)}%` }}
-      />
+    <div style={{ height: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "2px", overflow: "hidden" }}>
+      <div style={{ height: "100%", width: `${Math.min(value * 100, 100)}%`, background: color, borderRadius: "2px", transition: "width 0.7s ease" }} />
     </div>
   );
+}
+
+function getCategoryColor(cat: string): string {
+  if (cat === "Very High") return "#34d399";
+  if (cat === "High")      return "#a78bfa";
+  if (cat === "Medium")    return "#facc15";
+  return "#f87171";
 }
 
 export default function CreatorResultsPage() {
@@ -96,254 +88,215 @@ export default function CreatorResultsPage() {
 
   if (!data) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">No result found. <Link href="/creator/upload" className="text-indigo-600 underline">Upload a video</Link></p>
-      </main>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "1rem" }}>
+        <p style={{ color: "var(--muted)" }}>No result found.</p>
+        <Link href="/creator/upload" className="btn-primary" style={{ fontSize: "0.85rem" }}>Upload a video</Link>
+      </div>
     );
   }
 
   const { afi, creator } = data;
-  const capColors = CAT_COLORS[creator.captivation_category] || CAT_COLORS["Medium"];
+  const capColor = getCategoryColor(creator.captivation_category);
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16">
+    <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
       {/* Breadcrumb */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/creator" className="hover:text-indigo-600">Creator Studio</Link>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)" }}>
+        <Link href="/creator" style={{ color: "var(--muted)", textDecoration: "none" }}>Creator Studio</Link>
         <span>/</span>
-        <span className="text-gray-800 dark:text-gray-200 font-medium">Results</span>
+        <span style={{ color: "var(--foreground)" }}>Results</span>
         {afi.ml_powered && (
-          <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 text-xs rounded-full font-semibold">
+          <span style={{ marginLeft: "0.5rem", padding: "0.15rem 0.5rem", background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: "4px", color: "#a78bfa", fontSize: "0.65rem", letterSpacing: "0.05em" }}>
             ML POWERED
           </span>
         )}
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 pt-8 space-y-6">
+      {/* ── Row 1: Captivation ring + AFI vs Captivation ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
 
-        {/* ── Row 1: Captivation ring + AFI comparison ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          {/* Captivation card */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
-              Captivation Score
-            </h2>
-            <div className="flex items-center gap-6">
-              <div className="relative shrink-0">
-                <ScoreRing score={creator.captivation_score} color={capColors.ring} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {creator.captivation_score.toFixed(0)}
-                  </span>
-                  <span className="text-xs text-gray-400">/100</span>
-                </div>
-              </div>
-              <div className="flex-1 space-y-4">
-                <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${capColors.bg} ${capColors.text}`}>
-                  {creator.captivation_category}
+        {/* Captivation card */}
+        <div className="card-glass" style={{ padding: "2rem" }}>
+          <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "1.5rem" }}>
+            Captivation Score
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <ScoreRing score={creator.captivation_score} color={capColor} />
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <span className="mono" style={{ fontSize: "1.6rem", fontWeight: 700, color: "#ffffff" }}>
+                  {creator.captivation_score.toFixed(0)}
                 </span>
-                <div className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
-                  <div>
-                    <div className="flex justify-between mb-1"><span>Hook strength</span><span>{(creator.hook_strength * 100).toFixed(0)}%</span></div>
-                    <Bar value={creator.hook_strength} color="bg-indigo-500" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1"><span>Pace variance</span><span>{(creator.pace_variance * 100).toFixed(0)}%</span></div>
-                    <Bar value={creator.pace_variance} color="bg-violet-500" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1"><span>Text density fit</span><span>{(creator.text_density_fit * 100).toFixed(0)}%</span></div>
-                    <Bar value={creator.text_density_fit} color="bg-sky-500" />
-                  </div>
-                </div>
+                <span className="sans" style={{ fontSize: "0.7rem", color: "var(--muted)" }}>/100</span>
               </div>
             </div>
-            {/* Audio arc badge */}
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs text-gray-400">Audio arc:</span>
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs rounded-full font-medium capitalize">
-                {creator.audio_energy_arc}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <span style={{ display: "inline-block", padding: "0.25rem 0.75rem", borderRadius: "4px", fontSize: "0.8rem", fontWeight: 600, background: `${capColor}18`, border: `1px solid ${capColor}40`, color: capColor }}>
+                {creator.captivation_category}
               </span>
-            </div>
-          </div>
-
-          {/* AFI vs Captivation explainer */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
-              AFI vs. Captivation
-            </h2>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">AFI Score</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{afi.final_afi_score.toFixed(0)}</p>
-                <p className="text-xs text-gray-500 mt-1">{afi.final_category}</p>
-                <p className="text-xs text-gray-400 mt-2">How stimulating?</p>
-              </div>
-              <div className={`rounded-xl p-4 text-center ${capColors.bg}`}>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Captivation</p>
-                <p className={`text-3xl font-bold ${capColors.text}`}>{creator.captivation_score.toFixed(0)}</p>
-                <p className={`text-xs mt-1 ${capColors.text}`}>{creator.captivation_category}</p>
-                <p className="text-xs text-gray-400 mt-2">How captivating?</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              A high AFI score means stimulating content — but stimulating ≠ captivating.
-              Calm content can score high on captivation through strong pacing, a great hook, and
-              well-matched audio. Focus on captivation to build loyal viewers.
-            </p>
-          </div>
-        </div>
-
-        {/* ── Row 2: Trend match panel ── */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-              Trend Match
-            </h2>
-            <span className="px-3 py-1 bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 text-xs rounded-full font-semibold">
-              {creator.closest_trend_category}
-            </span>
-          </div>
-
-          {/* Gauge */}
-          <div className="mb-2 flex items-center justify-between text-xs text-gray-400">
-            <span>0</span>
-            <span className="font-semibold text-gray-700 dark:text-gray-200 text-base">
-              {creator.trend_match_score.toFixed(0)} / 100
-            </span>
-            <span>100</span>
-          </div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-6">
-            <div
-              className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-700"
-              style={{ width: `${creator.trend_match_score}%` }}
-            />
-          </div>
-
-          {/* Gap table */}
-          <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-700">
-            <table className="w-full text-xs">
-              <thead className="bg-gray-50 dark:bg-gray-750">
-                <tr>
-                  <th className="px-4 py-2 text-left text-gray-500 font-medium">Dimension</th>
-                  <th className="px-4 py-2 text-right text-gray-500 font-medium">Your video</th>
-                  <th className="px-4 py-2 text-right text-gray-500 font-medium">Trend optimal</th>
-                  <th className="px-4 py-2 text-right text-gray-500 font-medium">Gap</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {Object.entries(creator.gap_analysis).map(([dim, entry]) => (
-                  <tr key={dim} className="hover:bg-gray-50 dark:hover:bg-gray-750">
-                    <td className="px-4 py-2 text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                      <span>{DIM_ICONS[dim] || "•"}</span>
-                      {DIM_LABELS[dim] || dim}
-                    </td>
-                    <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">{entry.yours.toFixed(3)}</td>
-                    <td className="px-4 py-2 text-right text-gray-500">{entry.trend.toFixed(3)}</td>
-                    <td className={`px-4 py-2 text-right font-semibold ${
-                      Math.abs(entry.gap) < 0.05 * entry.trend
-                        ? "text-green-600"
-                        : entry.gap < 0
-                        ? "text-red-500"
-                        : "text-amber-500"
-                    }`}>
-                      {entry.gap > 0 ? "+" : ""}{entry.gap.toFixed(3)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* ── Row 3: Recommendations ── */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-              Improvement recommendations
-            </h2>
-            <div className="text-xs text-gray-400">
-              Predicted score after applying top changes:{" "}
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                {creator.predicted_score_after_changes.toFixed(0)} / 100
-              </span>
-            </div>
-          </div>
-
-          {creator.prioritised_recommendations.length === 0 ? (
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-2xl p-6 text-center">
-              <p className="text-emerald-700 dark:text-emerald-400 font-medium">
-                🎉 Your video closely matches current trends — no significant gaps detected.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {creator.prioritised_recommendations.map((rec) => (
-                <div key={rec.rank} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="shrink-0 w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 flex items-center justify-center text-sm font-bold">
-                      {rec.rank}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">{DIM_ICONS[rec.dimension] || "•"}</span>
-                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                          {DIM_LABELS[rec.dimension] || rec.dimension}
-                        </span>
-                        <span className="ml-auto px-2 py-0.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs rounded-full font-semibold">
-                          +{rec.predicted_score_delta.toFixed(1)} pts
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
-                        {rec.issue}
-                      </p>
-                      <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-3">
-                        <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
-                          <span className="font-semibold">Action: </span>{rec.action}
-                        </p>
-                      </div>
-                    </div>
+              {[
+                { label: "Hook strength",    val: creator.hook_strength,    color: "#a78bfa" },
+                { label: "Pace variance",    val: creator.pace_variance,    color: "#818cf8" },
+                { label: "Text density fit", val: creator.text_density_fit, color: "#38bdf8" },
+              ].map((m) => (
+                <div key={m.label}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
+                    <span className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem" }}>{m.label}</span>
+                    <span className="mono" style={{ color: "#ffffff", fontSize: "0.8rem" }}>{(m.val * 100).toFixed(0)}%</span>
                   </div>
+                  <MiniBar value={m.val} color={m.color} />
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Row 4: Creator insights ── */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
-            Insights
-          </h2>
-          <ul className="space-y-3">
-            {creator.creator_insights.map((insight, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
-                <span className="mt-0.5 w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs shrink-0">
-                  {i + 1}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.25rem" }}>
+                <span className="sans" style={{ color: "var(--muted)", fontSize: "0.75rem" }}>Audio arc:</span>
+                <span style={{ padding: "0.15rem 0.5rem", background: "rgba(250,204,21,0.12)", border: "1px solid rgba(250,204,21,0.25)", borderRadius: "4px", color: "#facc15", fontSize: "0.75rem", textTransform: "capitalize" }}>
+                  {creator.audio_energy_arc}
                 </span>
-                {insight}
-              </li>
-            ))}
-          </ul>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-4 justify-center pt-4">
-          <Link
-            href="/creator/upload"
-            className="px-6 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
-          >
-            Analyze another video
-          </Link>
-          <Link
-            href="/creator"
-            className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors"
-          >
-            Back to Creator Studio
-          </Link>
+        {/* AFI vs Captivation */}
+        <div className="card-glass" style={{ padding: "2rem" }}>
+          <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "1.5rem" }}>
+            AFI vs. Captivation
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.25rem" }}>
+            <div className="card-glass" style={{ padding: "1.25rem", textAlign: "center" }}>
+              <div className="sans" style={{ color: "var(--muted)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>AFI Score</div>
+              <div className="mono" style={{ fontSize: "2rem", fontWeight: 700, color: "#ffffff" }}>{afi.final_afi_score.toFixed(0)}</div>
+              <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem", marginTop: "0.25rem" }}>{afi.final_category}</div>
+              <div className="sans" style={{ color: "var(--muted)", fontSize: "0.72rem", marginTop: "0.5rem" }}>How stimulating?</div>
+            </div>
+            <div style={{ padding: "1.25rem", textAlign: "center", background: `${capColor}0d`, border: `1px solid ${capColor}25`, borderRadius: "8px" }}>
+              <div className="sans" style={{ color: "var(--muted)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Captivation</div>
+              <div className="mono" style={{ fontSize: "2rem", fontWeight: 700, color: capColor }}>{creator.captivation_score.toFixed(0)}</div>
+              <div className="sans" style={{ color: capColor, fontSize: "0.8rem", marginTop: "0.25rem" }}>{creator.captivation_category}</div>
+              <div className="sans" style={{ color: "var(--muted)", fontSize: "0.72rem", marginTop: "0.5rem" }}>How captivating?</div>
+            </div>
+          </div>
+          <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.82rem", lineHeight: 1.65 }}>
+            A high AFI score means stimulating content — but stimulating ≠ captivating.
+            Calm content can score high on captivation through strong pacing, a great hook,
+            and well-matched audio. Focus on captivation to build loyal viewers.
+          </p>
         </div>
       </div>
-    </main>
+
+      {/* ── Row 2: Trend Match ── */}
+      <div className="card-glass" style={{ padding: "2rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Trend Match
+          </div>
+          <span style={{ padding: "0.2rem 0.7rem", background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.25)", borderRadius: "4px", color: "#818cf8", fontSize: "0.78rem", fontWeight: 600 }}>
+            {creator.closest_trend_category}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+          <span className="sans" style={{ color: "var(--muted)", fontSize: "0.75rem" }}>0</span>
+          <span className="mono" style={{ fontWeight: 700, fontSize: "1.1rem", color: "#ffffff" }}>{creator.trend_match_score.toFixed(0)} / 100</span>
+          <span className="sans" style={{ color: "var(--muted)", fontSize: "0.75rem" }}>100</span>
+        </div>
+        <div style={{ height: "6px", background: "rgba(255,255,255,0.08)", borderRadius: "3px", overflow: "hidden", marginBottom: "1.5rem" }}>
+          <div style={{ height: "100%", width: `${creator.trend_match_score}%`, background: "linear-gradient(90deg, #818cf8, #a78bfa)", borderRadius: "3px", transition: "width 0.7s ease" }} />
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem" }}>Dimension</th>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem", textAlign: "right" }}>Your video</th>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem", textAlign: "right" }}>Trend optimal</th>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem", textAlign: "right" }}>Gap</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(creator.gap_analysis).map(([dim, entry]) => {
+                const gapColor = Math.abs(entry.gap) < 0.05 * Math.abs(entry.trend)
+                  ? "#34d399" : entry.gap < 0 ? "#f87171" : "#facc15";
+                return (
+                  <tr key={dim} style={{ borderBottom: "1px solid var(--card-border)" }}>
+                    <td><span className="sans" style={{ color: "var(--foreground)", fontSize: "0.88rem" }}>{DIM_ICONS[dim] || "•"} {DIM_LABELS[dim] || dim}</span></td>
+                    <td style={{ textAlign: "right" }}><span className="mono" style={{ color: "#ffffff", fontSize: "0.88rem" }}>{entry.yours.toFixed(3)}</span></td>
+                    <td style={{ textAlign: "right" }}><span className="mono" style={{ color: "var(--muted-mid)", fontSize: "0.88rem" }}>{entry.trend.toFixed(3)}</span></td>
+                    <td style={{ textAlign: "right" }}><span className="mono" style={{ color: gapColor, fontWeight: 700, fontSize: "0.88rem" }}>{entry.gap > 0 ? "+" : ""}{entry.gap.toFixed(3)}</span></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Row 3: Recommendations ── */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+          <h2 className="sans" style={{ fontWeight: 700, fontSize: "1.1rem", color: "#ffffff" }}>Improvement recommendations</h2>
+          <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>
+            Predicted after top changes:{" "}
+            <span className="mono" style={{ color: "#34d399", fontWeight: 700 }}>{creator.predicted_score_after_changes.toFixed(0)} / 100</span>
+          </div>
+        </div>
+        {creator.prioritised_recommendations.length === 0 ? (
+          <div className="card-glass" style={{ padding: "2rem", textAlign: "center" }}>
+            <p className="sans" style={{ color: "#34d399" }}>🎉 Your video closely matches current trends.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {creator.prioritised_recommendations.map((rec) => (
+              <div key={rec.rank} className="card-glass" style={{ padding: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
+                  <div style={{ width: "2rem", height: "2rem", borderRadius: "50%", background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span className="mono" style={{ color: "#a78bfa", fontSize: "0.8rem", fontWeight: 700 }}>{rec.rank}</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                      <span>{DIM_ICONS[rec.dimension] || "•"}</span>
+                      <span className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>{DIM_LABELS[rec.dimension] || rec.dimension}</span>
+                      <span style={{ marginLeft: "auto", padding: "0.15rem 0.6rem", background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.3)", borderRadius: "4px", color: "#34d399", fontSize: "0.75rem", fontWeight: 700 }}>
+                        +{rec.predicted_score_delta.toFixed(1)} pts
+                      </span>
+                    </div>
+                    <p className="sans" style={{ color: "#ffffff", fontSize: "0.92rem", fontWeight: 500, marginBottom: "0.6rem", lineHeight: 1.5 }}>{rec.issue}</p>
+                    <div style={{ padding: "0.75rem 1rem", background: "rgba(167,139,250,0.06)", border: "1px solid rgba(167,139,250,0.15)", borderRadius: "6px" }}>
+                      <span className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.82rem", lineHeight: 1.65 }}>
+                        <span style={{ color: "#a78bfa", fontWeight: 600 }}>Action: </span>{rec.action}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Row 4: Insights ── */}
+      <div className="card-glass" style={{ padding: "2rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
+          <span style={{ width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 8px rgba(167,139,250,0.5)" }} />
+          <span className="sans" style={{ fontWeight: 600, fontSize: "1rem", color: "#a78bfa" }}>Insights</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {creator.creator_insights.map((insight, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
+              <div style={{ width: "1.4rem", height: "1.4rem", borderRadius: "50%", background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "0.1rem" }}>
+                <span className="mono" style={{ color: "#a78bfa", fontSize: "0.65rem", fontWeight: 700 }}>{i + 1}</span>
+              </div>
+              <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.9rem", lineHeight: 1.65 }}>{insight}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", paddingTop: "0.5rem" }}>
+        <Link href="/creator/upload" className="btn-secondary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.2rem" }}>Analyze another video</Link>
+        <Link href="/creator" className="btn-primary" style={{ fontSize: "0.85rem", padding: "0.6rem 1.2rem" }}>Back to Creator Studio</Link>
+      </div>
+    </div>
   );
 }
