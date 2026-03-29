@@ -31,6 +31,14 @@ interface AFIResult {
   feature_importance: Record<string, number>;
   model_confidence: number;
   insights: string[];
+  visual_score?: number;
+  tempo_bpm?: number;
+  rms_energy?: number;
+  amplitude_spike_ratio?: number;
+  zero_crossing_rate?: number;
+  words_per_second?: number;
+  avg_text_area_ratio?: number;
+  text_change_rate?: number;
 }
 interface FullResult { afi: AFIResult; creator: CreatorResult; }
 
@@ -50,7 +58,7 @@ const DIM_ICONS: Record<string, string> = {
 };
 
 function ScoreRing({ score, color, size = 140 }: { score: number; color: string; size?: number }) {
-  const r = size / 2 - 12;
+  const r    = size / 2 - 12;
   const circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
   return (
@@ -79,11 +87,52 @@ function getCategoryColor(cat: string): string {
 }
 
 export default function CreatorResultsPage() {
-  const [data, setData] = useState<FullResult | null>(null);
+  const [data, setData]               = useState<FullResult | null>(null);
+  const [llmInsight, setLlmInsight]   = useState<string | null>(null);
+  const [llmLoading, setLlmLoading]   = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem("creatorResult");
-    if (raw) setData(JSON.parse(raw));
+    if (!raw) return;
+    const parsed: FullResult = JSON.parse(raw);
+    setData(parsed);
+
+    // Fetch LLM creator insight
+    const videoPath = localStorage.getItem("lastVideoPath");
+    if (videoPath && parsed?.afi) {
+      setLlmLoading(true);
+      fetch("http://localhost:8000/insights/creator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          video_path:      videoPath,
+          final_afi_score: parsed.afi.final_afi_score,
+          final_category:  parsed.afi.final_category,
+          visual_score:    parsed.afi.visual_score ?? 0,
+          audio_metrics: {
+            tempo_bpm:             parsed.afi.tempo_bpm             ?? 0,
+            rms_energy:            parsed.afi.rms_energy            ?? 0,
+            amplitude_spike_ratio: parsed.afi.amplitude_spike_ratio ?? 0,
+            zero_crossing_rate:    parsed.afi.zero_crossing_rate    ?? 0,
+            duration_seconds:      0,
+          },
+          text_metrics: {
+            total_words:         0,
+            words_per_second:    parsed.afi.words_per_second    ?? 0,
+            avg_words_per_frame: 0,
+            avg_text_area_ratio: parsed.afi.avg_text_area_ratio ?? 0,
+            text_change_rate:    parsed.afi.text_change_rate    ?? 0,
+            duration_seconds:    0,
+          },
+          feature_importance: parsed.afi.feature_importance ?? {},
+          creator_result:     parsed.creator,
+        }),
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => d && setLlmInsight(d.llm_insight))
+        .catch(console.error)
+        .finally(() => setLlmLoading(false));
+    }
   }, []);
 
   if (!data) {
@@ -274,7 +323,7 @@ export default function CreatorResultsPage() {
         )}
       </div>
 
-      {/* ── Row 4: Insights ── */}
+      {/* ── Row 4: Rule-based Insights ── */}
       <div className="card-glass" style={{ padding: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
           <span style={{ width: "0.5rem", height: "0.5rem", borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 8px rgba(167,139,250,0.5)" }} />
@@ -290,6 +339,30 @@ export default function CreatorResultsPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ── Row 5: LLM Creator Insight ── */}
+      <div className="card-glass" style={{ padding: "2rem", borderColor: "rgba(167,139,250,0.25)", background: "rgba(167,139,250,0.04)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+          <span style={{ width: "2rem", height: "2rem", borderRadius: "8px", background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)", color: "#a78bfa", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>✦</span>
+          <span className="sans" style={{ fontWeight: 600, fontSize: "1rem", color: "#a78bfa" }}>AI Creator Insight</span>
+          {llmLoading && (
+            <span className="spinner" style={{ width: "1rem", height: "1rem", borderTopColor: "#a78bfa", borderColor: "rgba(255,255,255,0.1)" }} />
+          )}
+        </div>
+        {llmInsight ? (
+          <div className="sans" style={{ fontSize: "0.9rem", lineHeight: 1.75, color: "var(--muted-mid)", whiteSpace: "pre-wrap" }}>
+            {llmInsight}
+          </div>
+        ) : llmLoading ? (
+          <p className="sans" style={{ fontSize: "0.88rem", color: "var(--muted)", fontStyle: "italic" }}>
+            Generating creator insight…
+          </p>
+        ) : (
+          <p className="sans" style={{ fontSize: "0.88rem", color: "var(--muted)" }}>
+            No insight available — upload a video first so the path is stored.
+          </p>
+        )}
       </div>
 
       {/* Actions */}

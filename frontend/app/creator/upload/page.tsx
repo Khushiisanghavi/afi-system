@@ -61,6 +61,7 @@ export default function CreatorUploadPage() {
 
       const data = await res.json();
       localStorage.setItem("creatorResult", JSON.stringify(data));
+      if (data.video_path) localStorage.setItem("lastVideoPath", data.video_path);
       router.push("/creator/results");
     } catch (e: unknown) {
       clearInterval(interval);

@@ -67,13 +67,14 @@ def _run_text(file_path: str):
 
 def _run_pipeline(file_path: str):
     """
-    Runs visual, audio, and text analysis IN PARALLEL.
-    Then feeds results into the ML model and insight engine.
+    Wave 1 (parallel): visual, audio, text analysis
+    Wave 2 (parallel): ML prediction + keyframe extraction
+    Wave 3: LLM insight (needs prediction + frames from wave 2)
     """
     visual_data = audio_metrics = text_metrics = None
     errors = []
 
-    # Run all three in parallel — biggest speed gain
+    # ── Wave 1: Run all three analyzers in parallel ───────────────────────────
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = {
             executor.submit(_run_visual, file_path): "visual",
@@ -92,7 +93,6 @@ def _run_pipeline(file_path: str):
                     text_metrics = result
             except Exception as e:
                 errors.append(f"{name}: {e}")
-                # Provide safe fallback so pipeline doesn't crash
                 if name == "visual":
                     visual_data = {"visual_score": 0, "timeline": []}
                 elif name == "audio":
@@ -111,13 +111,56 @@ def _run_pipeline(file_path: str):
     if errors:
         print(f"[pipeline] Non-fatal errors: {errors}")
 
-    # ML prediction
-    predictor  = get_predictor()
-    prediction = predictor.predict(audio_metrics, visual_data, text_metrics)
+    # ── Wave 2: ML prediction + keyframe extraction in parallel ───────────────
+    # Keyframe extraction doesn't need prediction, so it can run alongside it
+    prediction = None
+    frames_b64 = []
 
-    # Insights
+    def _run_prediction():
+        predictor = get_predictor()
+        return predictor.predict(audio_metrics, visual_data, text_metrics)
+
+    def _run_keyframes():
+        try:
+            from backend.services.keyframe_extractor import extract_keyframes
+            return extract_keyframes(file_path, n_frames=3)
+        except Exception as e:
+            print(f"[pipeline] Keyframe extraction failed (non-fatal): {e}")
+            return []
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        pred_future   = executor.submit(_run_prediction)
+        frames_future = executor.submit(_run_keyframes)
+        prediction    = pred_future.result()    # must succeed — no fallback
+        frames_b64    = frames_future.result()  # [] on failure, LLM skipped gracefully
+
+    # ── Rule-based insights (fast, no API call) ───────────────────────────────
     insights = generate_insights(audio_metrics, visual_data, text_metrics, prediction)
 
+    # ── Wave 3: LLM insight (uses prediction + frames) ────────────────────────
+    llm_insight = None
+    if frames_b64:
+        try:
+            from backend.services.groq_client import call_groq_vision
+            from backend.services.insight_prompts import results_prompt
+
+            prompt = results_prompt(
+                final_afi_score=prediction.final_afi_score,
+                final_category=prediction.final_category,
+                visual_score=float((visual_data or {}).get("visual_score", 0)),
+                audio_metrics=audio_metrics,
+                text_metrics=text_metrics,
+                feature_importance=prediction.feature_importance,
+                model_confidence=prediction.model_confidence,
+            )
+            llm_insight = call_groq_vision(prompt, frames_b64, max_tokens=650)
+        except Exception as e:
+            print(f"[pipeline] LLM insight failed (non-fatal): {e}")
+            llm_insight = None
+    else:
+        print("[pipeline] No frames extracted — skipping LLM insight")
+
+    # ── Build response ─────────────────────────────────────────────────────────
     audio_response = {
         **audio_metrics,
         "audio_afi_score": prediction.final_afi_score,
@@ -134,7 +177,8 @@ def _run_pipeline(file_path: str):
         "ml_powered":         True,
         "feature_importance": prediction.feature_importance,
         "model_confidence":   prediction.model_confidence,
-        "insights":           insights,
+        "insights":           insights,      # rule-based bullets — unchanged
+        "llm_insight":        llm_insight,   # LLM narrative — None if Groq fails
     }
 
     return visual_data, audio_response, text_response, final_response, audio_metrics, text_metrics

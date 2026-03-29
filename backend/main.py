@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.routes import router as analysis_router
@@ -5,6 +8,7 @@ from backend.api.auth_routes import router as auth_router
 from backend.api.wellness_routes import router as wellness_router
 from backend.api.creator_routes import router as creator_router
 from backend.api.wellbeing_routes import router as wellbeing_router
+from backend.api.insight_routes import router as insight_router
 from backend.database.db import engine
 from backend.database import models
 from backend.core.ml.model import AFIPredictor
@@ -21,11 +25,12 @@ app.add_middleware(
 
 models.Base.metadata.create_all(bind=engine)
 
-app.include_router(auth_router, tags=["Auth"])
-app.include_router(analysis_router, tags=["Analysis"])
-app.include_router(wellness_router, prefix="/wellness", tags=["Wellness"])
-app.include_router(creator_router, prefix="/creator", tags=["Creator Studio"])
+app.include_router(auth_router,      tags=["Auth"])
+app.include_router(analysis_router,  tags=["Analysis"])
+app.include_router(wellness_router,  prefix="/wellness",  tags=["Wellness"])
+app.include_router(creator_router,   prefix="/creator",   tags=["Creator Studio"])
 app.include_router(wellbeing_router, prefix="/wellbeing", tags=["Wellbeing"])
+app.include_router(insight_router,   tags=["Insights"])   # ← added
 
 
 @app.on_event("startup")

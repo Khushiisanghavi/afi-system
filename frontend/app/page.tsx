@@ -45,6 +45,7 @@ export default function HomePage() {
       }
 
       localStorage.setItem("afiResult", JSON.stringify(data));
+      if (data.video_path) localStorage.setItem("lastVideoPath", data.video_path);
       setAnalyzed(true);
 
     } catch (err: any) {

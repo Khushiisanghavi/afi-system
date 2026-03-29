@@ -7,7 +7,6 @@ import {
   LineChart, Line, CartesianGrid, Cell,
 } from "recharts";
 
-// ── helpers ───────────────────────────────────────────────────────────────────
 function getCategoryClass(cat: string) {
   if (cat === "Calm") return "badge-calm";
   if (cat === "Moderate") return "badge-moderate";
@@ -22,25 +21,60 @@ function getCategoryColor(cat: string) {
 }
 function featureLabel(key: string) {
   const map: Record<string, string> = {
-    visual_score:           "Visual Activity",
-    tempo_bpm:              "Audio Tempo",
-    rms_energy:             "Audio Loudness",
-    amplitude_spike_ratio:  "Audio Spikes",
-    zero_crossing_rate:     "Audio Texture",
-    words_per_second:       "Text Speed",
-    avg_text_area_ratio:    "Text Coverage",
-    text_change_rate:       "Text Changes",
+    visual_score: "Visual Activity", tempo_bpm: "Audio Tempo",
+    rms_energy: "Audio Loudness", amplitude_spike_ratio: "Audio Spikes",
+    zero_crossing_rate: "Audio Texture", words_per_second: "Text Speed",
+    avg_text_area_ratio: "Text Coverage", text_change_rate: "Text Changes",
   };
   return map[key] ?? key;
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ResultsPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData]           = useState<any>(null);
+  const [llmInsight, setLlmInsight] = useState<string | null>(null);
+  const [llmLoading, setLlmLoading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("afiResult");
-    if (stored) setData(JSON.parse(stored));
+    if (!stored) return;
+    const parsed = JSON.parse(stored);
+    setData(parsed);
+
+    // Fetch LLM insight after data loads
+    if (parsed?.video_path) {
+      setLlmLoading(true);
+      fetch("http://localhost:8000/insights/results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          video_path:        parsed.video_path,
+          final_afi_score:   parsed.final?.final_afi_score,
+          final_category:    parsed.final?.final_category,
+          visual_score:      parsed.visual?.visual_score ?? 0,
+          audio_metrics: {
+            tempo_bpm:               parsed.audio?.tempo_bpm ?? 0,
+            rms_energy:              parsed.audio?.rms_energy ?? 0,
+            amplitude_spike_ratio:   parsed.audio?.amplitude_spike_ratio ?? 0,
+            zero_crossing_rate:      parsed.audio?.zero_crossing_rate ?? 0,
+            duration_seconds:        parsed.audio?.duration_seconds ?? 0,
+          },
+          text_metrics: {
+            total_words:          parsed.text?.total_words ?? 0,
+            words_per_second:     parsed.text?.words_per_second ?? 0,
+            avg_words_per_frame:  parsed.text?.avg_words_per_frame ?? 0,
+            avg_text_area_ratio:  parsed.text?.avg_text_area_ratio ?? 0,
+            text_change_rate:     parsed.text?.text_change_rate ?? 0,
+            duration_seconds:     parsed.text?.duration_seconds ?? 0,
+          },
+          feature_importance: parsed.final?.feature_importance ?? {},
+          model_confidence:   parsed.final?.model_confidence ?? 0,
+        }),
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => d && setLlmInsight(d.llm_insight))
+        .catch(console.error)
+        .finally(() => setLlmLoading(false));
+    }
   }, []);
 
   if (!data) {
@@ -52,56 +86,38 @@ export default function ResultsPage() {
     );
   }
 
-  const category  = data.final?.final_category;
-  const score     = data.final?.final_afi_score ?? 0;
-  const catColor  = getCategoryColor(category);
+  const category     = data.final?.final_category;
+  const score        = data.final?.final_afi_score ?? 0;
+  const catColor     = getCategoryColor(category);
   const circumference = 2 * Math.PI * 45;
-  const dashOffset    = circumference - (score / 100) * circumference;
+  const dashOffset   = circumference - (score / 100) * circumference;
 
-  // ── existing charts ───────────────────────────────────────────────────────
   const modalityData = [
     { name: "Visual", score: data.visual?.visual_score ?? 0 },
-    { name: "Audio",  score: data.audio?.audio_afi_score ?? data.audio?.tempo_bpm ? Math.round(score) : 0 },
+    { name: "Audio",  score: data.audio?.audio_afi_score ?? 0 },
     { name: "Text",   score: data.text?.text_afi_score ?? 0 },
   ];
 
   const timelineData =
     data.visual?.timeline?.map((s: any, i: number) => ({
-      scene: i + 1,
-      score: s.avg_motion,
-      start: s.start,
-      end:   s.end,
+      scene: i + 1, score: s.avg_motion, start: s.start, end: s.end,
     })) ?? [];
 
-  const peakScene =
-    timelineData.length > 0
-      ? timelineData.reduce((max: any, s: any) => (s.score > max.score ? s : max))
-      : null;
+  const peakScene = timelineData.length > 0
+    ? timelineData.reduce((max: any, s: any) => (s.score > max.score ? s : max))
+    : null;
 
-  // ── ML fields ─────────────────────────────────────────────────────────────
-  const mlPowered   = data.final?.ml_powered ?? false;
-  const confidence  = data.final?.model_confidence ?? null;
-  const insights    = data.final?.insights ?? [];
-  const rawImportance = data.final?.feature_importance ?? {};
+  const mlPowered      = data.final?.ml_powered ?? false;
+  const confidence     = data.final?.model_confidence ?? null;
+  const insights       = data.final?.insights ?? [];
+  const rawImportance  = data.final?.feature_importance ?? {};
 
-  // Sort features by importance desc, format for chart
   const importanceData = Object.entries(rawImportance)
     .map(([key, val]) => ({ name: featureLabel(key), value: Math.round((val as number) * 100), raw: val as number }))
     .sort((a, b) => b.value - a.value);
 
   const topFeature = importanceData[0];
-
-  const explanation =
-    `This video shows ${category?.toLowerCase()} levels of attention stimulation.` +
-    (data.visual?.visual_score > 70 ? " High visual fragmentation contributes significantly." : "") +
-    (score > 70 ? " Frequent audio spikes increase stimulation." : "") +
-    (data.text?.text_afi_score > 70 ? " Rapid on-screen text adds to cognitive load." : "");
-
-  // Confidence bar color
-  const confColor = confidence == null ? "#6b6890"
-    : confidence >= 0.75 ? "#34d399"
-    : confidence >= 0.5  ? "#facc15"
-    : "#f87171";
+  const confColor  = confidence == null ? "#6b6890" : confidence >= 0.75 ? "#34d399" : confidence >= 0.5 ? "#facc15" : "#f87171";
 
   return (
     <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -134,8 +150,6 @@ export default function ResultsPage() {
 
       {/* SCORE + INSIGHT ROW */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1rem" }}>
-
-        {/* Score Card */}
         <div className="card-glass" style={{ padding: "2.5rem 2rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
           <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>AFI Score</p>
           <div style={{ position: "relative", width: "8.5rem", height: "8.5rem", marginBottom: "1.5rem" }}>
@@ -150,8 +164,6 @@ export default function ResultsPage() {
             </div>
           </div>
           <span className={`tag-badge ${getCategoryClass(category)}`} style={{ borderRadius: "6px", fontSize: "0.75rem", padding: "0.4rem 1rem" }}>{category}</span>
-
-          {/* Model confidence */}
           {confidence !== null && (
             <div style={{ marginTop: "1.5rem", width: "100%" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
@@ -165,15 +177,33 @@ export default function ResultsPage() {
           )}
         </div>
 
-        {/* AI Insight */}
         <div className="card-glass" style={{ padding: "2.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
             <span style={{ width: "2rem", height: "2rem", borderRadius: "8px", background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)", color: "#a78bfa", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>✦</span>
             <span className="sans" style={{ fontWeight: 600, fontSize: "1.05rem", color: "#ffffff" }}>AI Insight</span>
+            {llmLoading && (
+              <span className="spinner" style={{ width: "1rem", height: "1rem", borderTopColor: "#a78bfa", borderColor: "rgba(255,255,255,0.1)", marginLeft: "0.5rem" }} />
+            )}
           </div>
-          <p className="sans" style={{ fontSize: "1rem", lineHeight: 1.7, color: "var(--muted-mid)" }}>{explanation}</p>
 
-          {/* Modality mini stats */}
+          {/* LLM insight — shown when ready, falls back to rule-based */}
+          {llmInsight ? (
+            <div style={{ fontSize: "0.92rem", lineHeight: 1.75, color: "var(--muted-mid)", whiteSpace: "pre-wrap" }}>
+              {llmInsight}
+            </div>
+          ) : !llmLoading ? (
+            <p className="sans" style={{ fontSize: "1rem", lineHeight: 1.7, color: "var(--muted-mid)" }}>
+              {`This video shows ${category?.toLowerCase()} levels of attention stimulation.` +
+                (data.visual?.visual_score > 70 ? " High visual fragmentation contributes significantly." : "") +
+                (score > 70 ? " Frequent audio spikes increase stimulation." : "") +
+                (data.text?.text_afi_score > 70 ? " Rapid on-screen text adds to cognitive load." : "")}
+            </p>
+          ) : (
+            <p className="sans" style={{ fontSize: "0.9rem", color: "var(--muted)", fontStyle: "italic" }}>
+              Generating insight…
+            </p>
+          )}
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginTop: "2rem" }}>
             {modalityData.map((m) => (
               <div key={m.name} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "12px", padding: "1rem", border: "1px solid var(--card-border)" }}>
@@ -190,7 +220,7 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* ML INSIGHTS CARDS */}
+      {/* ML INSIGHTS CARDS — unchanged */}
       {insights.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
@@ -199,7 +229,7 @@ export default function ResultsPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "0.75rem" }}>
             {insights.map((insight: string, i: number) => {
-              const isWarning = insight.startsWith("⚠️");
+              const isWarning   = insight.startsWith("⚠️");
               const borderColor = isWarning ? "rgba(248,113,113,0.3)" : "rgba(167,139,250,0.2)";
               const bgColor     = isWarning ? "rgba(248,113,113,0.06)" : "rgba(167,139,250,0.05)";
               const dotColor    = isWarning ? "#f87171" : "#a78bfa";
@@ -214,7 +244,7 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* FEATURE IMPORTANCE */}
+      {/* FEATURE IMPORTANCE — unchanged */}
       {importanceData.length > 0 && (
         <div className="card-glass" style={{ padding: "2.5rem" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -235,13 +265,9 @@ export default function ResultsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,139,250,0.08)" horizontal={false} />
               <XAxis type="number" domain={[0, 100]} tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="name" width={110} tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: "#0d0d1a", border: "1px solid rgba(167,139,250,0.15)", borderRadius: "8px", color: "#f0f0f0" }}
-                formatter={(v: any) => [`${v}%`, "Importance"]}
-                cursor={{ fill: "rgba(167,139,250,0.04)" }}
-              />
+              <Tooltip contentStyle={{ background: "#0d0d1a", border: "1px solid rgba(167,139,250,0.15)", borderRadius: "8px", color: "#f0f0f0" }} formatter={(v: any) => [`${v}%`, "Importance"]} cursor={{ fill: "rgba(167,139,250,0.04)" }} />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {importanceData.map((entry, i) => (
+                {importanceData.map((_, i) => (
                   <Cell key={i} fill={i === 0 ? "#a78bfa" : i === 1 ? "#7c3aed55" : "rgba(167,139,250,0.25)"} />
                 ))}
               </Bar>
@@ -250,7 +276,7 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* MODALITY BAR CHART */}
+      {/* MODALITY BAR CHART — unchanged */}
       <div className="card-glass" style={{ padding: "2.5rem" }}>
         <h2 style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.3rem" }}>Modality Breakdown</h2>
         <p style={{ color: "var(--muted)", fontSize: "0.78rem", marginBottom: "1.5rem" }}>Visual, audio, and text sub-scores</p>
@@ -265,7 +291,7 @@ export default function ResultsPage() {
         </ResponsiveContainer>
       </div>
 
-      {/* TIMELINE CHART */}
+      {/* TIMELINE — unchanged */}
       {timelineData.length > 0 && (
         <div className="card-glass" style={{ padding: "2.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -273,11 +299,7 @@ export default function ResultsPage() {
               <h2 className="sans" style={{ fontWeight: 600, fontSize: "1.1rem", marginBottom: "0.2rem", color: "#ffffff" }}>Stimulation Timeline</h2>
               <p className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.9rem" }}>Scene-by-scene stimulation across the video</p>
             </div>
-            {peakScene && (
-              <span className="tag-badge badge-over" style={{ fontSize: "0.75rem", borderRadius: "4px" }}>
-                Peak at Scene {peakScene.scene}
-              </span>
-            )}
+            {peakScene && <span className="tag-badge badge-over" style={{ fontSize: "0.75rem", borderRadius: "4px" }}>Peak at Scene {peakScene.scene}</span>}
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={timelineData}>
@@ -285,9 +307,7 @@ export default function ResultsPage() {
               <XAxis dataKey="scene" tick={{ fill: "#6b6890", fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "#6b6890", fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: "rgba(5,5,15,0.9)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: "12px", color: "#f0f0f0" }} cursor={{ stroke: "rgba(167,139,250,0.3)", strokeWidth: 2 }} />
-              <Line type="monotone" dataKey="score" stroke="#a78bfa" strokeWidth={3}
-                dot={{ r: 4, fill: "#a78bfa", strokeWidth: 0 }}
-                activeDot={{ r: 7, fill: "#ffffff", strokeWidth: 0, stroke: "#a78bfa" }} />
+              <Line type="monotone" dataKey="score" stroke="#a78bfa" strokeWidth={3} dot={{ r: 4, fill: "#a78bfa", strokeWidth: 0 }} activeDot={{ r: 7, fill: "#ffffff", strokeWidth: 0 }} />
             </LineChart>
           </ResponsiveContainer>
           {peakScene && (
@@ -301,7 +321,7 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* Footer nav */}
+      {/* Footer nav — unchanged */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
         {[
           { href: "/compare", icon: "⇄", label: "Compare Videos", desc: "Side-by-side AFI comparison" },
