@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface CreatorHistoryItem {
   id: number;
@@ -28,11 +27,17 @@ function getCategoryStyle(cat: string): { color: string; bg: string } {
   }
 }
 
+function truncateName(name: string | null, maxLen = 22): string {
+  if (!name) return "Untitled";
+  const withoutExt = name.replace(/\.[^/.]+$/, "");
+  if (withoutExt.length <= maxLen) return withoutExt;
+  return withoutExt.slice(0, maxLen) + "…";
+}
+
 export default function CreatorStudioPage() {
   const [history, setHistory] = useState<CreatorHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -56,132 +61,68 @@ export default function CreatorStudioPage() {
 
   return (
     <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
+      <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
 
-      {/* Glow — indigo tint for creator */}
-      <div style={{
-        position: "fixed",
-        width: "55vw", height: "55vw",
-        top: "30%", left: "60%",
-        transform: "translate(-50%, -50%)",
-        background: "radial-gradient(ellipse, rgba(129,140,248,0.06) 0%, transparent 70%)",
-        pointerEvents: "none", zIndex: 0,
-      }} />
-
-      <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.75rem", position: "relative", zIndex: 1 }}>
-
-        {/* Breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)" }}>
           <Link href="/" style={{ color: "var(--muted)", textDecoration: "none" }}>Home</Link>
           <span>/</span>
           <span style={{ color: "#818cf8" }}>Creator Studio</span>
         </div>
 
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1.5rem" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-              <span style={{
-                fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.2em",
-                textTransform: "uppercase", color: "#818cf8",
-                background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.2)",
-                padding: "0.25rem 0.6rem", borderRadius: "4px",
-              }}>Creator Studio</span>
+            <div style={{ marginBottom: "0.75rem" }}>
+              <span style={{ fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#818cf8", background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.2)", padding: "0.25rem 0.6rem", borderRadius: "4px" }}>Creator Studio</span>
             </div>
             <h1 className="display-font" style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 600, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: "0.5rem" }}>
               Improve Your Content
             </h1>
             <p className="sans" style={{ color: "rgba(232,232,240,0.5)", fontSize: "0.95rem", maxWidth: "36rem", lineHeight: 1.7 }}>
-              Analyze your videos for captivation score, platform trend alignment, and get
-              actionable recommendations to improve performance.
+              Analyze your videos for captivation score, platform trend alignment, and get actionable recommendations.
             </p>
           </div>
-          <Link href="/creator/upload" style={{
-            display: "inline-flex", alignItems: "center", gap: "0.5rem",
-            background: "linear-gradient(135deg, #818cf8, #6366f1)",
-            color: "#ffffff", textDecoration: "none",
-            padding: "0.7rem 1.4rem", borderRadius: "8px",
-            fontFamily: "'Inter', sans-serif", fontSize: "0.9rem", fontWeight: 600,
-            boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
-            transition: "opacity 0.2s ease", flexShrink: 0,
-          }}>
+          <Link href="/creator/upload" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "linear-gradient(135deg, #818cf8, #6366f1)", color: "#ffffff", textDecoration: "none", padding: "0.7rem 1.4rem", borderRadius: "8px", fontSize: "0.9rem", fontWeight: 600, boxShadow: "0 4px 16px rgba(99,102,241,0.3)", flexShrink: 0 }}>
             Analyze a video →
           </Link>
         </div>
 
-        {/* Not logged in state */}
         {!loggedIn && !loading && (
           <div className="card-glass" style={{ padding: "3rem", textAlign: "center" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>◈</div>
-            <p className="sans" style={{ color: "rgba(232,232,240,0.6)", marginBottom: "1.5rem" }}>
-              Sign in to access Creator Studio and track your video performance.
-            </p>
-            <Link href="/login" style={{
-              display: "inline-block",
-              background: "linear-gradient(135deg, #818cf8, #6366f1)",
-              color: "#fff", textDecoration: "none",
-              padding: "0.6rem 1.4rem", borderRadius: "8px",
-              fontFamily: "'Inter', sans-serif", fontSize: "0.875rem", fontWeight: 600,
-            }}>
-              Sign in →
-            </Link>
+            <p className="sans" style={{ color: "rgba(232,232,240,0.6)", marginBottom: "1.5rem" }}>Sign in to access Creator Studio.</p>
+            <Link href="/login" style={{ display: "inline-block", background: "linear-gradient(135deg, #818cf8, #6366f1)", color: "#fff", textDecoration: "none", padding: "0.6rem 1.4rem", borderRadius: "8px", fontSize: "0.875rem", fontWeight: 600 }}>Sign in →</Link>
           </div>
         )}
 
-        {/* Stats row — only when logged in and has data */}
         {loggedIn && history.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
             {[
-              { label: "Videos Analyzed", val: history.length, unit: "", accent: "#818cf8" },
-              { label: "Avg Captivation",  val: avgCaptivation ?? "—", unit: "/100", accent: "#a78bfa" },
-              { label: "Best Performing",  val: best ? (best.video_name || "Untitled").slice(0, 14) + "…" : "—", unit: "", accent: "#34d399" },
+              { label: "Videos Analyzed", val: String(history.length), unit: "", accent: "#818cf8", large: true },
+              { label: "Avg Captivation",  val: avgCaptivation ?? "—", unit: "/100", accent: "#a78bfa", large: true },
+              { label: "Best Performing",  val: truncateName(best?.video_name ?? null, 20), unit: "", accent: "#34d399", large: false },
             ].map((s, i) => (
-              <div key={i} className="card-glass" style={{ padding: "1.5rem" }}>
-                <div className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.8rem", marginBottom: "0.5rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                  {s.label}
-                </div>
-                <div className="mono" style={{ fontSize: "1.75rem", fontWeight: 700, color: s.accent }}>
-                  {s.val}
-                  {s.unit && <span className="sans" style={{ fontSize: "0.8rem", color: "rgba(232,232,240,0.35)", marginLeft: "0.25rem" }}>{s.unit}</span>}
+              <div key={i} className="card-glass" style={{ padding: "1.5rem", minWidth: 0, overflow: "hidden" }}>
+                <div className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.8rem", marginBottom: "0.5rem", letterSpacing: "0.05em", textTransform: "uppercase" }}>{s.label}</div>
+                <div className="mono" style={{ fontSize: s.large ? "1.75rem" : "1rem", fontWeight: 700, color: s.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {s.val}{s.unit && <span className="sans" style={{ fontSize: "0.8rem", color: "rgba(232,232,240,0.35)", marginLeft: "0.25rem" }}>{s.unit}</span>}
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* History table */}
         {loggedIn && (
           <div>
-            <h2 className="sans" style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(232,232,240,0.5)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "1rem" }}>
-              Recent Analyses
-            </h2>
-
+            <h2 className="sans" style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(232,232,240,0.5)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "1rem" }}>Recent Analyses</h2>
             {loading ? (
               <div className="card-glass" style={{ padding: "3rem", textAlign: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "rgba(232,232,240,0.4)", fontSize: "0.875rem" }}>
-                  <span className="spinner" style={{ borderTopColor: "#818cf8", borderColor: "rgba(255,255,255,0.1)" }} />
-                  Loading analyses…
+                  <span className="spinner" style={{ borderTopColor: "#818cf8", borderColor: "rgba(255,255,255,0.1)" }} />Loading…
                 </div>
               </div>
             ) : history.length === 0 ? (
               <div className="card-glass" style={{ padding: "4rem", textAlign: "center" }}>
-                <div style={{
-                  width: "3.5rem", height: "3.5rem", borderRadius: "12px",
-                  background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.2)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  margin: "0 auto 1.25rem", fontSize: "1.4rem", color: "#818cf8",
-                }}>◈</div>
-                <p className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
-                  No analyses yet. Upload your first video to get started.
-                </p>
-                <Link href="/creator/upload" style={{
-                  display: "inline-block",
-                  background: "linear-gradient(135deg, #818cf8, #6366f1)",
-                  color: "#fff", textDecoration: "none",
-                  padding: "0.6rem 1.4rem", borderRadius: "8px",
-                  fontFamily: "'Inter', sans-serif", fontSize: "0.875rem", fontWeight: 600,
-                }}>
-                  Upload video
-                </Link>
+                <p className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>No analyses yet. Upload your first video.</p>
+                <Link href="/creator/upload" style={{ display: "inline-block", background: "linear-gradient(135deg, #818cf8, #6366f1)", color: "#fff", textDecoration: "none", padding: "0.6rem 1.4rem", borderRadius: "8px", fontSize: "0.875rem", fontWeight: 600 }}>Upload video</Link>
               </div>
             ) : (
               <div className="card-glass" style={{ overflow: "hidden", padding: "1rem 0" }}>
@@ -198,24 +139,14 @@ export default function CreatorStudioPage() {
                       const catStyle = getCategoryStyle(item.captivation_category);
                       return (
                         <tr key={item.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
-                          <td>
-                            <div className="sans" style={{ fontWeight: 500, fontSize: "0.95rem", maxWidth: "240px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>
-                              {item.video_name || "Untitled"}
+                          <td style={{ maxWidth: "180px" }}>
+                            <div className="sans" title={item.video_name || "Untitled"} style={{ fontWeight: 500, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>
+                              {truncateName(item.video_name, 22)}
                             </div>
                           </td>
+                          <td><span className="mono" style={{ fontSize: "1.2rem", fontWeight: 700, color: getCaptivationColor(item.captivation_score) }}>{item.captivation_score.toFixed(1)}</span></td>
                           <td>
-                            <span className="mono" style={{ fontSize: "1.2rem", fontWeight: 700, color: getCaptivationColor(item.captivation_score) }}>
-                              {item.captivation_score.toFixed(1)}
-                            </span>
-                          </td>
-                          <td>
-                            <span style={{
-                              display: "inline-block",
-                              padding: "0.2rem 0.6rem", borderRadius: "4px",
-                              fontSize: "0.78rem", fontWeight: 600,
-                              color: catStyle.color, background: catStyle.bg,
-                              border: `1px solid ${catStyle.color}33`,
-                            }}>
+                            <span style={{ display: "inline-block", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.78rem", fontWeight: 600, color: catStyle.color, background: catStyle.bg, border: `1px solid ${catStyle.color}33` }}>
                               {item.captivation_category}
                             </span>
                           </td>
@@ -224,16 +155,10 @@ export default function CreatorStudioPage() {
                               <div style={{ flex: 1, height: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "2px", maxWidth: "60px" }}>
                                 <div style={{ height: "100%", width: `${item.trend_match_score}%`, background: "#818cf8", borderRadius: "2px" }} />
                               </div>
-                              <span className="mono" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.6)" }}>
-                                {item.trend_match_score.toFixed(0)}%
-                              </span>
+                              <span className="mono" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.6)" }}>{item.trend_match_score.toFixed(0)}%</span>
                             </div>
                           </td>
-                          <td>
-                            <span className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.4)" }}>
-                              {new Date(item.created_at).toLocaleDateString()}
-                            </span>
-                          </td>
+                          <td><span className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.4)" }}>{new Date(item.created_at).toLocaleDateString()}</span></td>
                         </tr>
                       );
                     })}
@@ -244,21 +169,14 @@ export default function CreatorStudioPage() {
           </div>
         )}
 
-        {/* Info cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "1rem" }}>
           {[
-            { icon: "◈", color: "#818cf8", title: "Captivation Score",    desc: "Hook strength, pace variance, and text density fit — separate from AFI." },
-            { icon: "◉", color: "#a78bfa", title: "Trend Matching",        desc: "How well your video aligns with current platform benchmarks." },
-            { icon: "◆", color: "#34d399", title: "Improvement Engine",    desc: "Prioritised, actionable recommendations with predicted score delta." },
+            { icon: "◈", color: "#818cf8", title: "Captivation Score",  desc: "Hook strength, pace variance, and text density fit — separate from AFI." },
+            { icon: "◉", color: "#a78bfa", title: "Trend Matching",      desc: "How well your video aligns with current platform benchmarks." },
+            { icon: "◆", color: "#34d399", title: "Improvement Engine",  desc: "Prioritised recommendations with predicted score delta." },
           ].map((c, i) => (
             <div key={i} className="card-glass card-hover" style={{ padding: "1.75rem" }}>
-              <div style={{
-                fontSize: "1.3rem", color: c.color, marginBottom: "1rem",
-                width: "2.75rem", height: "2.75rem",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: `${c.color}18`, borderRadius: "10px",
-                border: `1px solid ${c.color}33`,
-              }}>{c.icon}</div>
+              <div style={{ fontSize: "1.3rem", color: c.color, marginBottom: "1rem", width: "2.75rem", height: "2.75rem", display: "flex", alignItems: "center", justifyContent: "center", background: `${c.color}18`, borderRadius: "10px", border: `1px solid ${c.color}33` }}>{c.icon}</div>
               <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", color: "#ffffff", marginBottom: "0.5rem" }}>{c.title}</div>
               <div className="sans" style={{ color: "rgba(232,232,240,0.45)", fontSize: "0.82rem", lineHeight: 1.6 }}>{c.desc}</div>
             </div>

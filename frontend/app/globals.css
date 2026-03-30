@@ -64,6 +64,12 @@ body::before {
   z-index: 1;
 }
 
+@media (max-width: 768px) {
+  .container-section {
+    padding: 1.5rem 1rem;
+  }
+}
+
 /* ── CARDS — Modern Glassmorphism ── */
 .card-glass {
   background: var(--card-bg);

@@ -46,14 +46,17 @@ def compute_attention_fragmentation_index(
     recency_factor = (sum(recent_scores) / len(recent_scores)) if recent_scores else avg_consumed_afi
     recency_contribution = (recency_factor / 100) * 10
 
+    # Scale binge signals to max 20 points as per the 20% weight
+    binge_contribution = min(binge_signals * 10, 20)
+
     afi_score = (
         (avg_consumed_afi / 100) * 40 +
         overstim_ratio * 30 +
-        (binge_penalty / 100) * 20 +
+        binge_contribution +
         recency_contribution
     )
 
-    return round(min(max(afi_score * 100, 0), 100), 2)
+    return round(min(max(afi_score, 0), 100), 2)
 
 
 def compute_overstim_ratio(content_mix: Dict[str, float]) -> float:

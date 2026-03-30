@@ -27,14 +27,20 @@ export default function ComparePage() {
   const [loading, setLoading] = useState(false);
 
   const analyzeVideo = async (file?: File, url?: string) => {
-    const formData = new FormData();
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     if (file) {
-      formData.append("file", file);  // backend expects "file"
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await axios.post("http://127.0.0.1:8000/analyze", formData, { headers });
+      return response.data;
+    } else if (url) {
+      const response = await axios.post("http://127.0.0.1:8000/analyze-url", { url: url.trim() }, { headers });
+      return response.data;
     } else {
-      throw new Error("URL analysis is not supported by the backend yet. Please upload a file.");
+      throw new Error("No file or URL provided.");
     }
-    const response = await axios.post("http://127.0.0.1:8000/analyze", formData);
-    return response.data;
   };
 
   const handleCompare = async () => {

@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "AFI Wellbeing Monitor",
+  "version": "1.0",
+  "description": "Real-time attention analysis for short-form video",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.tiktok.com/*",
+    "*://*.instagram.com/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.tiktok.com/*",
+        "*://*.instagram.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

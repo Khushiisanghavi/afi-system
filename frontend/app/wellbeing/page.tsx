@@ -263,7 +263,7 @@ export default function WellbeingPage() {
             </div>
 
             {/* CTA cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
               <Link href="/wellbeing/profile" style={{ textDecoration: "none" }}>
                 <div className="card-glass card-hover" style={{ padding: "1.75rem" }}>
                   <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", color: "#ffffff", marginBottom: "0.4rem" }}>

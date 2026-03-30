@@ -9,6 +9,7 @@ from backend.api.wellness_routes import router as wellness_router
 from backend.api.creator_routes import router as creator_router
 from backend.api.wellbeing_routes import router as wellbeing_router
 from backend.api.insight_routes import router as insight_router
+from backend.api.extension_routes import router as extension_router  # ← added
 from backend.database.db import engine
 from backend.database import models
 from backend.core.ml.model import AFIPredictor
@@ -30,7 +31,8 @@ app.include_router(analysis_router,  tags=["Analysis"])
 app.include_router(wellness_router,  prefix="/wellness",  tags=["Wellness"])
 app.include_router(creator_router,   prefix="/creator",   tags=["Creator Studio"])
 app.include_router(wellbeing_router, prefix="/wellbeing", tags=["Wellbeing"])
-app.include_router(insight_router,   tags=["Insights"])   # ← added
+app.include_router(insight_router,   tags=["Insights"])
+app.include_router(extension_router, prefix="/extension", tags=["Extension"]) # ← added
 
 
 @app.on_event("startup")

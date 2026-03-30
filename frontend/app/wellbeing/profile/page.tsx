@@ -14,6 +14,8 @@ interface ProfileData {
   content_mix: ContentMix;
   summary: string;
   insights: string[];
+  overall_minutes_watched: number;
+  average_afi_score: number;
 }
 
 const HARM_INFO: Record<string, { color: string; bg: string; border: string; dot: string; desc: string }> = {
@@ -160,9 +162,11 @@ export default function WellbeingProfilePage() {
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
                 {[
-                  { label: "Overstimulation ratio", val: `${(profile.overstim_ratio * 100).toFixed(0)}%` },
-                  { label: "High-AFI minutes (7d)",  val: `${profile.weekly_high_afi_minutes.toFixed(0)} min` },
-                  { label: "Binge sessions",          val: String(profile.binge_signals) },
+                  { label: "Overall minutes watched", val: `${profile.overall_minutes_watched?.toFixed(0) || 0} min` },
+                  { label: "Average AFI score", val: profile.average_afi_score?.toFixed(0) || "0" },
+                  { label: "Overstimulation ratio", val: `${((profile.overstim_ratio || 0) * 100).toFixed(0)}%` },
+                  { label: "High-AFI minutes (7d)",  val: `${profile.weekly_high_afi_minutes?.toFixed(0) || 0} min` },
+                  { label: "Binge sessions",          val: String(profile.binge_signals || 0) },
                 ].map((s) => (
                   <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", borderRadius: "10px", padding: "1rem", textAlign: "center" }}>
                     <div className="sans" style={{ fontSize: "0.72rem", color: "rgba(232,232,240,0.4)", marginBottom: "0.4rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>

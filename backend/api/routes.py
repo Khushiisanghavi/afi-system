@@ -65,7 +65,7 @@ def _run_text(file_path: str):
     return analyzer.analyze()
 
 
-def _run_pipeline(file_path: str):
+def _run_pipeline(file_path: str, fast_mode: bool = False):
     """
     Wave 1 (parallel): visual, audio, text analysis
     Wave 2 (parallel): ML prediction + keyframe extraction
@@ -121,6 +121,8 @@ def _run_pipeline(file_path: str):
         return predictor.predict(audio_metrics, visual_data, text_metrics)
 
     def _run_keyframes():
+        if fast_mode:
+            return []
         try:
             from backend.services.keyframe_extractor import extract_keyframes
             return extract_keyframes(file_path, n_frames=3)
@@ -139,7 +141,7 @@ def _run_pipeline(file_path: str):
 
     # ── Wave 3: LLM insight (uses prediction + frames) ────────────────────────
     llm_insight = None
-    if frames_b64:
+    if frames_b64 and not fast_mode:
         try:
             from backend.services.groq_client import call_groq_vision
             from backend.services.insight_prompts import results_prompt

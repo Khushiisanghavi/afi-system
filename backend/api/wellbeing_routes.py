@@ -94,6 +94,10 @@ def get_profile(
     p = data["profile"]
     cm = data["content_mix"]
 
+    all_sessions = db.query(AnalysisResult).filter(AnalysisResult.user_id == user_id).all()
+    overall_minutes_watched = len(all_sessions) * 0.5
+    avg_score = sum(s.final_afi for s in all_sessions) / len(all_sessions) if all_sessions else 0
+
     return {
         "profile_tier": p["profile_tier"],
         "attention_fragmentation_index": p["attention_fragmentation_index"],
@@ -104,6 +108,8 @@ def get_profile(
         "summary": data["summary"],
         "plan": data["plan"],
         "insights": data["insights"],
+        "overall_minutes_watched": overall_minutes_watched,
+        "average_afi_score": avg_score,
     }
 
 

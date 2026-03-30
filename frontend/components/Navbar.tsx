@@ -216,6 +216,9 @@ export default function Navbar() {
           background: rgba(167, 139, 250, 0.1);
           margin: 0.25rem 0;
         }
+        .nav-links-scrollable::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
 
       <div style={{
@@ -241,7 +244,7 @@ export default function Navbar() {
         </Link>
 
         {/* Nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem", overflowX: "auto", whiteSpace: "nowrap", scrollbarWidth: "none", msOverflowStyle: "none", margin: "0 1rem", flex: 1 }} className="nav-links-scrollable">
           <Link href="/"         className="nav-link">Home</Link>
           <Link href="/results"  className="nav-link">Results</Link>
           <Link href="/compare"  className="nav-link">Compare</Link>
@@ -250,12 +253,11 @@ export default function Navbar() {
           <div className="nav-divider" />
           <Link href="/creator"   className="nav-link-creator">Creator Studio</Link>
           <Link href="/wellbeing" className="nav-link-wellbeing">Wellbeing</Link>
+          <Link href="/extension" className="nav-link" style={{ color: "#fde047", fontWeight: 600 }}>Get Extension</Link>
         </div>
 
-        {/* Right — CTA + profile */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <Link href="/" className="nav-cta">Analyze</Link>
-
+        {/* Right — profile */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
           <div ref={dropdownRef} style={{ position: "relative" }}>
             {userName ? (
               <button className="profile-avatar" onClick={() => setDropdownOpen((o) => !o)} title={userName}>
