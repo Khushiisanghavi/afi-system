@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AFI Wellbeing Monitor</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #05050f;
+      color: #ffffff;
+    }
+    .header {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-logo {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #2dd4bf, #14b8a6);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #05050f;
+    }
+    .header-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .container {
+      padding: 16px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .stat-row:last-child {
+      margin-bottom: 0;
+    }
+    .stat-label {
+      color: rgba(232, 232, 240, 0.5);
+      font-size: 13px;
+    }
+    .stat-value {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .stat-value.high { color: #f87171; }
+    .stat-value.moderate { color: #a78bfa; }
+    .stat-value.calm { color: #34d399; }
+    
+    .limit-section {
+      margin-top: 16px;
+    }
+    .limit-title {
+      font-size: 13px;
+      color: rgba(232, 232, 240, 0.5);
+      margin-bottom: 8px;
+    }
+    .limit-input-group {
+      display: flex;
+      gap: 8px;
+    }
+    input[type="number"] {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-radius: 6px;
+      padding: 8px;
+      width: 80px;
+      outline: none;
+    }
+    button {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .footer {
+      padding: 16px;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(232, 232, 240, 0.4);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .footer a {
+      color: #2dd4bf;
+      text-decoration: none;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-logo">A</div>
+    <div class="header-title">Attention Monitor</div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(232,232,240,0.4); margin-bottom: 12px;">Today's Session</div>
+      
+      <div class="stat-row">
+        <span class="stat-label">Videos Watched</span>
+        <span class="stat-value" id="videos-watched">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Average AFI</span>
+        <span class="stat-value" id="average-afi">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">High / Overstim</span>
+        <span class="stat-value high" id="high-count">--</span>
+      </div>
+    </div>
+
+    <div class="card limit-section">
+      <div class="limit-title">Daily High-AFI Limit (minutes)</div>
+      <div class="limit-input-group">
+        <input type="number" id="limit-input" min="0" placeholder="e.g. 30">
+        <button id="save-limit-btn">Save</button>
+      </div>
+      <div id="limit-msg" style="color: #34d399; font-size: 11px; margin-top: 8px; display: none;">Saved!</div>
+    </div>
+    
+    <div id="login-section" class="card" style="text-align: center; background: rgba(45,212,191,0.05); border-color: rgba(45,212,191,0.2);">
+      <div id="login-msg" style="font-size: 13px; margin-bottom: 12px; color: rgba(232,232,240,0.7);">Login to sync with your Wellbeing Dashboard</div>
+      <button id="login-btn" style="background: rgba(45,212,191,0.15); border-color: rgba(45,212,191,0.4); color: #2dd4bf; width: 100%;">Connect Account</button>
+      <div id="connected-msg" style="display: none; color: #34d399; font-weight: 600; font-size: 13px; align-items: center; justify-content: center; gap: 6px;">
+        <span style="background: #34d399; color: #000; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px;">✓</span> 
+        Connected
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="http://localhost:3000/wellbeing/profile" target="_blank">Open Full Dashboard ↗</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

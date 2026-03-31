@@ -1,6 +1,26 @@
+# Python
 venv/
 __pycache__/
 *.pyc
-sample_video/
+
+# Environment
 .env
+
+# Database
+*.db
+
+# Video files
+*.mp4
+
+# Local sample videos
+sample_video/
 backend/sample_videos/
+backend/storage/
+
+# Node / Next.js
+node_modules/
+.next/
+
+# OS files
+.DS_Store
+backend/core/ml/afi_model.pkl

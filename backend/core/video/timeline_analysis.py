@@ -1,30 +1,46 @@
 import cv2
 import numpy as np
-from core.video.scene_detection import detect_scenes
+from backend.core.video.scene_detection import detect_scenes
 
 
 def generate_visual_timeline(video_path):
 
     scenes = detect_scenes(video_path)
 
+    if not scenes:
+        return None
+
     cap = cv2.VideoCapture(video_path)
+
+    if not cap.isOpened():
+        return None
 
     ret, prev_frame = cap.read()
     if not ret:
+        cap.release()
         return None
 
+    prev_frame = cv2.resize(prev_frame, (640, 360))
     prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
 
     motion_per_frame = []
 
     fps = cap.get(cv2.CAP_PROP_FPS)
+
     frame_index = 1
+    frame_skip = 5
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
+        frame_index += 1
+
+        if frame_index % frame_skip != 0:
+            continue
+
+        frame = cv2.resize(frame, (640, 360))
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         flow = cv2.calcOpticalFlowFarneback(
@@ -47,15 +63,23 @@ def generate_visual_timeline(video_path):
         motion_per_frame.append((timestamp, avg_magnitude))
 
         prev_gray = gray
-        frame_index += 1
 
     cap.release()
+
+    if not motion_per_frame:
+        return None
+
+    motion_values = np.array([m for (_, m) in motion_per_frame])
+
+    motion_mean = np.mean(motion_values)
+    motion_std = np.std(motion_values)
 
     timeline = []
 
     for scene in scenes:
-        start = scene["start"]
-        end = scene["end"]
+
+        start    = scene["start"]
+        end      = scene["end"]
         duration = scene["duration"]
 
         scene_motion = [
@@ -70,11 +94,14 @@ def generate_visual_timeline(video_path):
             avg_motion = 0.0
             max_motion = 0.0
 
-        # --- Normalization Logic ---
+        norm_duration = 1 - min(duration / 3.0, 1.0)
 
-        norm_duration = 1 - min(duration / 2.0, 1.0)
-        norm_avg_motion = min(avg_motion / 5.0, 1.0)
-        norm_max_motion = min(max_motion / 20.0, 1.0)
+        if motion_std > 0:
+            norm_avg_motion = min(avg_motion / (motion_mean + motion_std), 1.0)
+            norm_max_motion = min(max_motion / (motion_mean + 2 * motion_std), 1.0)
+        else:
+            norm_avg_motion = 0.0
+            norm_max_motion = 0.0
 
         scene_score = (
             0.4 * norm_duration +
@@ -83,32 +110,26 @@ def generate_visual_timeline(video_path):
         )
 
         timeline.append({
-            "start": start,
-            "end": end,
-            "duration": duration,
-            "avg_motion": avg_motion,
-            "max_motion": max_motion,
-            "scene_stimulation_score": scene_score
+            "start":                    float(start),
+            "end":                      float(end),
+            "duration":                 float(duration),
+            "avg_motion":               avg_motion,
+            "max_motion":               max_motion,
+            "scene_stimulation_score":  float(scene_score),
         })
 
     return timeline
 
 
-def compute_overall_visual_score(timeline):
+def compute_overall_visual_score(timeline) -> float:
+    """Returns visual score on 0–100 scale."""
 
     if not timeline:
         return 0.0
 
-    scores = [scene["scene_stimulation_score"] for scene in timeline]
+    scores       = [scene["scene_stimulation_score"] for scene in timeline]
+    overall_score = float(np.mean(scores))
+    overall_score = min(overall_score, 1.0)
 
-    return float(np.mean(scores))
-
-# 2.0 sec = calm scene duration upper bound
-
-#5.0 = high avg motion normalization constant
-
-#20.0 = extreme motion spike bound
-
-#Weights: 0.4 / 0.4 / 0.2
-
-#This is part of AFI formula design. 
+    # Scale to 0–100 to match audio and text scorers
+    return round(overall_score * 100, 2)
