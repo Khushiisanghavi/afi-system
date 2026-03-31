@@ -4,27 +4,41 @@ from scenedetect.detectors import ContentDetector
 
 def detect_scenes(video_path, threshold=27.0):
 
-    video_manager = VideoManager([video_path])
-    scene_manager = SceneManager()
+    try:
+        video_manager = VideoManager([video_path])
+        scene_manager = SceneManager()
 
-    scene_manager.add_detector(ContentDetector(threshold=threshold))
+        scene_manager.add_detector(ContentDetector(threshold=threshold))
 
-    video_manager.start()
-    scene_manager.detect_scenes(frame_source=video_manager)
+        video_manager.start()
+        scene_manager.detect_scenes(frame_source=video_manager)
 
-    scene_list = scene_manager.get_scene_list()
+        scene_list = scene_manager.get_scene_list()
 
-    scenes = []
-    for start, end in scene_list:
-        start_sec = start.get_seconds()
-        end_sec = end.get_seconds()
+        scenes = []
 
-        scenes.append({
-            "start": start_sec,
-            "end": end_sec,
-            "duration": end_sec - start_sec
-        })
+        for start, end in scene_list:
+            start_sec = start.get_seconds()
+            end_sec = end.get_seconds()
 
-    video_manager.release()
+            duration = end_sec - start_sec
 
-    return scenes
+            # Ignore extremely tiny scenes (noise)
+            if duration < 0.15:
+                continue
+
+            scenes.append({
+                "start": float(start_sec),
+                "end": float(end_sec),
+                "duration": float(duration)
+            })
+
+        video_manager.release()
+
+        if not scenes:
+            return []
+
+        return scenes
+
+    except Exception:
+        return []
