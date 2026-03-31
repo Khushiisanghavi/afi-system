@@ -18,13 +18,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     currentUrl = request.url;
 
     // Call the backend API
-    fetch("http://localhost:8000/extension/analyze", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ url: request.url })
-    })
+    chrome.storage.local.get(["appToken"], (result) => {
+      const headers = { "Content-Type": "application/json" };
+      if (result.appToken) {
+        headers["Authorization"] = `Bearer ${result.appToken}`;
+      }
+      
+      fetch("http://localhost:8000/extension/analyze", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ url: request.url })
+      })
     .then(response => {
       if (!response.ok) {
         throw new Error("Network response was not ok");
@@ -69,11 +73,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         error: error.message
       });
     });
+    }); // Close chrome.storage.local.get
     
     return true; // Keep message channel open for async fetch
   }
   
   if (request.type === "GET_STATS") {
     sendResponse(sessionStats);
+  }
+  
+  if (request.type === "SYNC_TOKEN") {
+    if (request.token) {
+      chrome.storage.local.set({ appToken: request.token });
+    } else {
+      chrome.storage.local.remove(["appToken"]);
+    }
   }
 });

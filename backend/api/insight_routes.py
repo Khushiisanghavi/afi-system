@@ -14,6 +14,7 @@ from typing import Optional
 from backend.services.groq_client import call_groq_vision, call_groq_text
 from backend.services.keyframe_extractor import extract_keyframes
 from backend.services.insight_prompts import (
+    visual_analysis_prompt,
     results_prompt,
     creator_prompt,
     reports_prompt,
@@ -84,6 +85,12 @@ class ResultsInsightRequest(BaseModel):
 @router.post("/results")
 async def results_insight(body: ResultsInsightRequest):
     frames = _frames(body.video_path)
+    
+    # Step 1: Get raw visual description using the 11B vision model
+    visual_desc_prompt = visual_analysis_prompt()
+    visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
+
+    # Step 2: Pass visual description to the 70B text model
     prompt = results_prompt(
         final_afi_score=body.final_afi_score,
         final_category=body.final_category,
@@ -92,8 +99,9 @@ async def results_insight(body: ResultsInsightRequest):
         text_metrics=body.text_metrics.model_dump(),
         feature_importance=body.feature_importance,
         model_confidence=body.model_confidence,
+        visual_description=visual_description,
     )
-    insight = call_groq_vision(prompt, frames, max_tokens=650)
+    insight = call_groq_text(prompt, max_tokens=650)
     return {"llm_insight": insight}
 
 
@@ -113,6 +121,12 @@ class CreatorInsightRequest(BaseModel):
 @router.post("/creator")
 async def creator_insight(body: CreatorInsightRequest):
     frames = _frames(body.video_path)
+    
+    # Step 1: Get raw visual description using the 11B vision model
+    visual_desc_prompt = visual_analysis_prompt()
+    visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
+
+    # Step 2: Pass visual description to the 70B text model
     prompt = creator_prompt(
         final_afi_score=body.final_afi_score,
         final_category=body.final_category,
@@ -121,8 +135,9 @@ async def creator_insight(body: CreatorInsightRequest):
         text_metrics=body.text_metrics.model_dump(),
         feature_importance=body.feature_importance,
         creator_result=body.creator_result,
+        visual_description=visual_description,
     )
-    insight = call_groq_vision(prompt, frames, max_tokens=800)
+    insight = call_groq_text(prompt, max_tokens=800)
     return {"llm_insight": insight}
 
 
@@ -169,6 +184,12 @@ class WellbeingAnalysisRequest(BaseModel):
 @router.post("/wellbeing/analysis")
 async def wellbeing_analysis(body: WellbeingAnalysisRequest):
     frames = _frames(body.last_video_path)
+    
+    # Step 1: Get raw visual description using the 11B vision model
+    visual_desc_prompt = visual_analysis_prompt()
+    visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
+
+    # Step 2: Pass visual description to the 70B text model
     prompt = wellbeing_analysis_prompt(
         profile=body.profile.model_dump(),
         last_video_afi=body.last_video_afi,
@@ -176,8 +197,9 @@ async def wellbeing_analysis(body: WellbeingAnalysisRequest):
         last_video_visual=body.last_video_visual,
         audio_metrics=body.audio_metrics.model_dump(),
         text_metrics=body.text_metrics.model_dump(),
+        visual_description=visual_description,
     )
-    insight = call_groq_vision(prompt, frames, max_tokens=600)
+    insight = call_groq_text(prompt, max_tokens=600)
     return {"llm_insight": insight}
 
 

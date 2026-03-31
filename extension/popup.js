@@ -39,8 +39,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Handle Login button (placeholder for actual auth flow)
+  // Handle Login button
   document.getElementById("login-btn").addEventListener("click", () => {
-    chrome.tabs.create({ url: "http://localhost:3000/auth" });
+    chrome.tabs.create({ url: "http://localhost:3000/login" });
+  });
+
+  // Check auth state
+  chrome.storage.local.get(["appToken"], (result) => {
+    if (result.appToken) {
+      document.getElementById("login-btn").style.display = "none";
+      document.getElementById("login-msg").style.display = "none";
+      document.getElementById("connected-msg").style.display = "flex";
+      document.getElementById("login-section").style.borderColor = "rgba(52,211,153,0.3)";
+      document.getElementById("login-section").style.background = "rgba(52,211,153,0.08)";
+    }
   });
 });

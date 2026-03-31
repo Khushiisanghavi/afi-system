@@ -28,7 +28,7 @@ export default function ComparePage() {
 
   const analyzeVideo = async (file?: File, url?: string) => {
     const token = localStorage.getItem("token");
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const headers = (token && token !== "undefined" && token !== "null") ? { Authorization: `Bearer ${token}` } : {};
 
     if (file) {
       const formData = new FormData();

@@ -33,6 +33,7 @@ def _get_or_build_profile(user_id: str, db: Session) -> dict:
         {
             "final_afi": s.final_afi,
             "video_name": s.video_name,
+            "url": s.url,
             "created_at": s.created_at,
             "duration_seconds": None,  # not stored yet — future enhancement
         }
@@ -154,7 +155,7 @@ def get_history(
         .all()
     )
     session_dicts = [
-        {"final_afi": s.final_afi, "video_name": s.video_name, "created_at": s.created_at}
+        {"final_afi": s.final_afi, "video_name": s.video_name, "url": s.url, "created_at": s.created_at}
         for s in sessions
     ]
     classified = classify_history(session_dicts)

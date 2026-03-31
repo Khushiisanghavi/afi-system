@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-interface Session { video_name: string | null; final_afi: number; harm_tier: string; created_at: string; }
+interface Session { url?: string | null; video_name: string | null; final_afi: number; harm_tier: string; created_at: string; }
 interface ContentMix { calm: number; moderate: number; high: number; overstimulating: number; }
 interface Checkin { focus_quality: number; notes: string | null; created_at: string; }
 interface ProfileData {
@@ -222,7 +222,11 @@ export default function WellbeingProfilePage() {
                       <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.85rem" }}>
                         <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: info.dot, flexShrink: 0 }} />
                         <span className="sans" style={{ flex: 1, color: "rgba(232,232,240,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {s.video_name || "Untitled"}
+                          {s.url ? (
+                            <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(232,232,240,0.7)", textDecoration: "underline" }}>{s.url}</a>
+                          ) : (
+                            s.video_name || "Untitled"
+                          )}
                         </span>
                         <span className="mono" style={{ fontSize: "0.8rem", color: "rgba(232,232,240,0.4)" }}>{s.final_afi.toFixed(0)}</span>
                         <span className="sans" style={{ fontSize: "0.78rem", fontWeight: 600, color: info.color, minWidth: "5rem", textAlign: "right" }}>{s.harm_tier}</span>

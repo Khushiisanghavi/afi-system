@@ -17,7 +17,7 @@ export default function ReportsPage() {
       try {
         const token = localStorage.getItem("token");
         const headers: Record<string, string> = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        if (token && token !== "undefined" && token !== "null") headers["Authorization"] = `Bearer ${token}`;
 
         const [t, w, tr, checkins] = await Promise.all([
           fetch("http://localhost:8000/wellness/today",   { headers }).then((r) => r.ok ? r.json() : null).catch(() => null),

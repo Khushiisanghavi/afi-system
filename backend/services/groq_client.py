@@ -12,8 +12,8 @@ if not api_key:
 
 client = Groq(api_key=api_key)
 
-# llama-3.2-90b-vision-preview for frames, 3.3-70b for text-only routes
-VISION_MODEL = "llama-3.2-90b-vision-preview"
+# llama-3.2-11b-vision-preview for raw visual analysis, 3.3-70b for complex reasoning
+VISION_MODEL = "llama-3.2-11b-vision-preview"
 TEXT_MODEL   = "llama-3.3-70b-versatile"
 DB_PATH      = "backend/afi.db"
 

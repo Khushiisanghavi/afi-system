@@ -42,6 +42,7 @@ def classify_history(sessions: List[Dict]) -> Dict[str, Any]:
         tier_counts[tier] += 1
         classified.append({
             "video_name": s.get("video_name", "Unknown"),
+            "url": s.get("url"),
             "final_afi": score,
             "harm_tier": tier,
             "created_at": s.get("created_at"),
@@ -99,3 +100,4 @@ def _detect_binge_signals(classified: List[Dict]) -> int:
             in_binge = False
 
     return binge_count
+    

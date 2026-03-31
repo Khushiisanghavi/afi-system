@@ -12,7 +12,8 @@
     "*://*.youtube.com/*",
     "*://*.tiktok.com/*",
     "*://*.instagram.com/*",
-    "http://localhost:8000/*"
+    "http://localhost:8000/*",
+    "http://localhost:3000/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -26,6 +27,11 @@
       ],
       "js": ["content.js"],
       "css": ["overlay.css"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["http://localhost:3000/*"],
+      "js": ["sync-auth.js"],
       "run_at": "document_end"
     }
   ],

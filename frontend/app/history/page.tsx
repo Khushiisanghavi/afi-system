@@ -16,7 +16,7 @@ export default function HistoryPage() {
       const token = localStorage.getItem("token");
 
       try {
-        if (token) {
+        if (token && token !== "undefined" && token !== "null") {
           // Logged in — fetch only this user's history
           setIsLoggedIn(true);
           const response = await axios.get("http://localhost:8000/history", {
@@ -35,8 +35,9 @@ export default function HistoryPage() {
           localStorage.removeItem("token");
           localStorage.removeItem("user_name");
           router.push("/login");
+        } else {
+          console.error("Error fetching history:", error);
         }
-        console.error("Error fetching history:", error);
       } finally {
         setLoading(false);
       }
@@ -143,7 +144,11 @@ export default function HistoryPage() {
               <tr key={item.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
                 <td>
                   <div className="sans" style={{ fontWeight: 500, fontSize: "0.95rem", maxWidth: "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>
-                    {item.video_name || item.url || item.video_path || "Video"}
+                    {item.url ? (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>{item.url}</a>
+                    ) : (
+                      item.video_name || item.video_path || "Video"
+                    )}
                   </div>
                 </td>
                 <td>
