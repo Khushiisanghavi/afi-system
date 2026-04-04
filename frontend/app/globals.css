@@ -1,21 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 :root {
   --background: #05050f;
   --foreground: #e8e8f0;
-  --card-bg: rgba(255, 255, 255, 0.03);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-border-hover: rgba(167, 139, 250, 0.3);
-  --primary: #a78bfa;
-  --primary-text: #05050f;
+  --card-bg: rgba(6, 6, 12, 0.6);
+  --card-border: rgba(167, 139, 250, 0.1);
+  --card-border-hover: rgba(167, 139, 250, 0.4);
+  --primary: #5F4BFE; /* Visily primary accent, slightly blended with theme */
+  --primary-hover: #7b69ff;
+  --primary-text: #ffffff;
   --border: rgba(167, 139, 250, 0.15);
   --border-strong: rgba(167, 139, 250, 0.35);
   --muted: rgba(232, 232, 240, 0.4);
   --muted-mid: rgba(232, 232, 240, 0.6);
-  --surface: rgba(167, 139, 250, 0.06);
+  --surface: rgba(167, 139, 250, 0.04);
   --accent: #818cf8;
 }
 
@@ -31,16 +29,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle, formal ambient background */
+/* Subtle, formal ambient background with Visily glows */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background: 
-    radial-gradient(circle at 15% 50%, rgba(167, 139, 250, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(129, 140, 248, 0.03) 0%, transparent 50%);
+    radial-gradient(circle at 10% 10%, rgba(95, 75, 254, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 90% 90%, rgba(167, 139, 250, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(5, 5, 15, 0.8) 0%, #05050f 100%);
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 }
 
 ::selection { background: rgba(167,139,250,0.25); color: #ffffff; }
@@ -70,25 +69,32 @@ body::before {
   }
 }
 
-/* ── CARDS — Modern Glassmorphism ── */
+/* ── CARDS — Modern Glassmorphism (Visily Style Bento) ── */
 .card-glass {
   background: var(--card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
   border: 1px solid var(--card-border);
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  border-radius: 24px; /* Soft bento box radius */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05); /* Inner highlight */
+  overflow: hidden;
 }
 
 .card-hover { 
-  transition: border-color 0.4s ease, transform 0.4s ease, background 0.4s ease; 
-  border-radius: 12px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+  border-radius: 24px;
   border: 1px solid var(--card-border);
 }
 .card-hover:hover {
   border-color: var(--card-border-hover);
-  background: rgba(167, 139, 250, 0.05);
-  transform: translateY(-2px);
+  background: rgba(167, 139, 250, 0.08); /* Lifted glow */
+  transform: translateY(-4px);
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(167, 139, 250, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* ── BUTTONS — Smooth, Readable ── */
@@ -97,27 +103,26 @@ body::before {
   background: var(--primary);
   color: var(--primary-text);
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem; /* Larger, readable size */
-  font-weight: 600;
-  padding: 0.875rem 1.75rem;
-  border: 1px solid var(--primary);
+  font-size: 0.95rem; 
+  font-weight: 500;
+  padding: 0.8rem 1.75rem;
+  border: 1px solid rgba(255,255,255,0.1);
   display: inline-block;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  border-radius: 8px; /* Elegant subtle rounding */
+  border-radius: 100px; /* Pill shape */
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.15);
+  box-shadow: 0 4px 14px rgba(95, 75, 254, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 .btn-primary:hover { 
-  background: #b59cfc; 
-  border-color: #b59cfc; 
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(167, 139, 250, 0.25);
+  background: var(--primary-hover); 
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(95, 75, 254, 0.5), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 .btn-primary:active { 
-  transform: translateY(1px);
-  box-shadow: 0 2px 8px rgba(167, 139, 250, 0.15);
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 2px 8px rgba(95, 75, 254, 0.4);
 }
 .btn-primary:disabled {
   background: rgba(167, 139, 250, 0.1);
@@ -130,22 +135,25 @@ body::before {
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
   color: var(--foreground);
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem; /* Increased size */
+  font-size: 0.9rem;
   font-weight: 500;
   padding: 0.8rem 1.75rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   display: inline-block;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 8px; /* Elegant subtle rounding */
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 100px;
   text-decoration: none;
 }
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
 }
 
 /* ── FORM ELEMENTS ── */
