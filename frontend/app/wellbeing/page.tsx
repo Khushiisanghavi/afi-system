@@ -1,6 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion, Variants } from "framer-motion";
+
+const STAGGER_CONTAINER: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const FADE_UP: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 65, damping: 20 } }
+};
 
 interface ContentMix { calm: number; moderate: number; high: number; overstimulating: number; }
 interface ProfileData {
@@ -112,23 +123,29 @@ export default function WellbeingPage() {
         pointerEvents: "none", zIndex: 0,
       }} />
 
-      <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.75rem", position: "relative", zIndex: 1 }}>
+      <motion.div 
+        className="container-section" 
+        style={{ display: "flex", flexDirection: "column", gap: "1.75rem", position: "relative", zIndex: 1 }}
+        variants={STAGGER_CONTAINER}
+        initial="hidden"
+        animate="show"
+      >
 
         {/* Breadcrumb */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)" }}>
+        <motion.div variants={FADE_UP} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)" }}>
           <Link href="/" style={{ color: "var(--muted)", textDecoration: "none" }}>Home</Link>
           <span>/</span>
           <span style={{ color: "#2dd4bf" }}>Wellbeing</span>
-        </div>
+        </motion.div>
 
         {/* Header */}
-        <div>
+        <motion.div variants={FADE_UP}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
             <span style={{
               fontFamily: "monospace", fontSize: "0.65rem", letterSpacing: "0.2em",
               textTransform: "uppercase", color: "#2dd4bf",
               background: "rgba(45,212,191,0.08)", border: "1px solid rgba(45,212,191,0.2)",
-              padding: "0.25rem 0.6rem", borderRadius: "4px",
+              padding: "0.3rem 0.75rem", borderRadius: "100px",
             }}>Wellbeing Dashboard</span>
           </div>
           <h1 className="display-font" style={{ fontSize: "clamp(1.8rem, 4vw, 2.75rem)", fontWeight: 600, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: "0.5rem" }}>
@@ -138,7 +155,7 @@ export default function WellbeingPage() {
             Understand how the content you watch affects your attention span, and get a
             personalised plan to improve it.
           </p>
-        </div>
+        </motion.div>
 
         {/* Loading */}
         {loading && (
@@ -183,45 +200,45 @@ export default function WellbeingPage() {
 
         {/* Profile data */}
         {!loading && profile && tier && (
-          <>
+          <motion.div variants={STAGGER_CONTAINER} initial="hidden" animate="show" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             {/* Top row — tier + AFI + stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
+            <motion.div variants={FADE_UP} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.5rem" }}>
 
               {/* Tier card */}
               <div className="card-glass" style={{
-                padding: "1.75rem",
+                padding: "2rem",
                 borderColor: tier.border,
                 background: tier.bg,
               }}>
-                <div className="sans" style={{ fontSize: "0.75rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+                <div className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1rem" }}>
                   Profile Tier
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
-                  <span style={{ fontSize: "1.5rem", color: tier.color }}>{tier.icon}</span>
-                  <span className="mono" style={{ fontSize: "1.3rem", fontWeight: 700, color: tier.color }}>{tier.label}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+                  <span style={{ fontSize: "1.75rem", color: tier.color }}>{tier.icon}</span>
+                  <span className="mono" style={{ fontSize: "1.5rem", fontWeight: 700, color: tier.color }}>{tier.label}</span>
                 </div>
-                <p className="sans" style={{ fontSize: "0.82rem", color: "rgba(232,232,240,0.5)", lineHeight: 1.65, marginBottom: "1rem" }}>
+                <p className="sans" style={{ fontSize: "0.95rem", color: "rgba(232,232,240,0.6)", lineHeight: 1.65, marginBottom: "1.5rem" }}>
                   {profile.summary}
                 </p>
-                <Link href="/wellbeing/profile" style={{ fontSize: "0.8rem", color: "#2dd4bf", textDecoration: "none", fontFamily: "monospace" }}>
+                <Link href="/wellbeing/profile" style={{ fontSize: "0.9rem", color: "#2dd4bf", textDecoration: "none", fontFamily: "monospace" }}>
                   Full profile →
                 </Link>
               </div>
 
               {/* AFI gauge */}
-              <div className="card-glass" style={{ padding: "1.75rem" }}>
-                <div className="sans" style={{ fontSize: "0.75rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+              <div className="card-glass" style={{ padding: "2rem" }}>
+                <div className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1rem" }}>
                   Attention Fragmentation Index
                 </div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: "0.4rem", marginBottom: "1rem" }}>
-                  <span className="mono" style={{ fontSize: "3rem", fontWeight: 700, color: "#ffffff", lineHeight: 1 }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: "0.4rem", marginBottom: "1.5rem" }}>
+                  <span className="mono" style={{ fontSize: "4rem", fontWeight: 700, color: "#ffffff", lineHeight: 1 }}>
                     {profile.attention_fragmentation_index.toFixed(0)}
                   </span>
-                  <span className="sans" style={{ color: "rgba(232,232,240,0.35)", marginBottom: "0.4rem" }}>/100</span>
+                  <span className="sans" style={{ color: "rgba(232,232,240,0.35)", marginBottom: "0.6rem" }}>/100</span>
                 </div>
-                <div style={{ height: "4px", background: "rgba(255,255,255,0.07)", borderRadius: "2px", marginBottom: "0.6rem" }}>
+                <div style={{ height: "6px", background: "rgba(255,255,255,0.07)", borderRadius: "100px", marginBottom: "0.85rem", overflow: "hidden" }}>
                   <div style={{
-                    height: "100%", borderRadius: "2px",
+                    height: "100%", borderRadius: "100px",
                     width: `${profile.attention_fragmentation_index}%`,
                     background: profile.attention_fragmentation_index < 35
                       ? "#34d399"
@@ -231,14 +248,14 @@ export default function WellbeingPage() {
                     transition: "width 0.8s cubic-bezier(0.16,1,0.3,1)",
                   }} />
                 </div>
-                <p className="sans" style={{ fontSize: "0.75rem", color: "rgba(232,232,240,0.35)" }}>
+                <p className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.4)" }}>
                   Below 35 is healthy · Higher = more fragmented
                 </p>
               </div>
 
               {/* Key stats */}
-              <div className="card-glass" style={{ padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.1rem" }}>
-                <div className="sans" style={{ fontSize: "0.75rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              <div className="card-glass" style={{ padding: "2rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                   Key Stats
                 </div>
                 {[
@@ -247,53 +264,54 @@ export default function WellbeingPage() {
                   { label: "Binge sessions detected",     val: `${profile.binge_signals}`,                               color: profile.binge_signals > 0 ? "#f87171" : "#34d399" },
                 ].map((s) => (
                   <div key={s.label}>
-                    <div className="sans" style={{ fontSize: "0.78rem", color: "rgba(232,232,240,0.4)", marginBottom: "0.2rem" }}>{s.label}</div>
-                    <div className="mono" style={{ fontSize: "1.4rem", fontWeight: 700, color: s.color }}>{s.val}</div>
+                    <div className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.5)", marginBottom: "0.25rem" }}>{s.label}</div>
+                    <div className="mono" style={{ fontSize: "1.6rem", fontWeight: 700, color: s.color }}>{s.val}</div>
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Content mix donut */}
-            <div className="card-glass" style={{ padding: "1.75rem" }}>
-              <div className="sans" style={{ fontSize: "0.75rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1.5rem" }}>
+            <motion.div variants={FADE_UP} className="card-glass" style={{ padding: "2.5rem" }}>
+              <div className="sans" style={{ fontSize: "0.85rem", color: "rgba(232,232,240,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1.5rem" }}>
                 Content Mix
               </div>
               <DonutChart mix={profile.content_mix} />
-            </div>
+            </motion.div>
 
             {/* CTA cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+            <motion.div variants={FADE_UP} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
               <Link href="/wellbeing/profile" style={{ textDecoration: "none" }}>
-                <div className="card-glass card-hover" style={{ padding: "1.75rem" }}>
-                  <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", color: "#ffffff", marginBottom: "0.4rem" }}>
+                <motion.div whileHover={{ scale: 1.02 }} className="card-glass card-hover" style={{ padding: "2rem" }}>
+                  <div className="sans" style={{ fontWeight: 600, fontSize: "1.1rem", color: "#ffffff", marginBottom: "0.5rem" }}>
                     Full attention profile →
                   </div>
-                  <div className="sans" style={{ fontSize: "0.82rem", color: "rgba(232,232,240,0.4)", lineHeight: 1.6 }}>
+                  <div className="sans" style={{ fontSize: "0.9rem", color: "rgba(232,232,240,0.5)", lineHeight: 1.6 }}>
                     Detailed breakdown of your content habits and harm tiers.
                   </div>
-                </div>
+                </motion.div>
               </Link>
               <Link href="/wellbeing/plan" style={{ textDecoration: "none" }}>
-                <div style={{
-                  padding: "1.75rem", borderRadius: "12px",
+                <motion.div whileHover={{ scale: 1.02 }} style={{
+                  padding: "2rem", borderRadius: "24px",
                   background: "linear-gradient(135deg, rgba(45,212,191,0.15), rgba(20,184,166,0.08))",
                   border: "1px solid rgba(45,212,191,0.25)",
-                  transition: "border-color 0.2s ease",
+                  transition: "all 0.3s ease",
+                  cursor: "pointer"
                 }}>
-                  <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", color: "#2dd4bf", marginBottom: "0.4rem" }}>
+                  <div className="sans" style={{ fontWeight: 600, fontSize: "1.1rem", color: "#2dd4bf", marginBottom: "0.5rem" }}>
                     Your recovery plan →
                   </div>
-                  <div className="sans" style={{ fontSize: "0.82rem", color: "rgba(45,212,191,0.55)", lineHeight: 1.6 }}>
+                  <div className="sans" style={{ fontSize: "0.9rem", color: "rgba(45,212,191,0.6)", lineHeight: 1.6 }}>
                     Daily goals, milestones, and personalised tips.
                   </div>
-                </div>
+                </motion.div>
               </Link>
-            </div>
-          </>
+            </motion.div>
+          </motion.div>
         )}
 
-      </div>
+      </motion.div>
     </div>
   );
 }

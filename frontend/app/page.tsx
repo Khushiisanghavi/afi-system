@@ -1,6 +1,35 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import WavyBackground from "../components/WavyBackground";
+
+// Framer Motion Variants for Visily aesthetics
+import { Variants } from "framer-motion";
+
+const STAGGER_CONTAINER: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15
+    }
+  }
+};
+
+const FADE_UP: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 60, damping: 20 } }
+};
+
+const FLOATING_ANIMATION: any = {
+  y: ["-4px", "4px", "-4px"],
+  transition: {
+    duration: 5,
+    repeat: Infinity,
+    ease: "easeInOut"
+  }
+};
 
 export default function HomePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -100,6 +129,7 @@ export default function HomePage() {
         position: "relative",
         overflow: "hidden",
       }}>
+        <WavyBackground />
         <div style={{
           position: "absolute",
           width: "60vw", height: "60vw",
@@ -110,15 +140,20 @@ export default function HomePage() {
           zIndex: 0,
         }} />
 
-        <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: "50rem", width: "100%" }}>
+        <motion.div 
+          className="relative z-10 text-center w-full max-w-5xl"
+          variants={STAGGER_CONTAINER}
+          initial="hidden"
+          animate="show"
+        >
 
-          <div className="anim-fade-up" style={{ marginBottom: "2.5rem" }}>
+          <motion.div variants={FADE_UP} style={{ marginBottom: "2.5rem" }}>
             <span className="label-sm" style={{ letterSpacing: "0.28em" }}>
               AI-Powered Attention Analysis
             </span>
-          </div>
+          </motion.div>
 
-          <h1 className="anim-fade-up delay-1 display-font" style={{
+          <motion.h1 variants={FADE_UP} className="display-font" style={{
             fontSize: "clamp(2.8rem, 8vw, 6.5rem)",
             fontWeight: 600,
             lineHeight: 1.05,
@@ -133,23 +168,23 @@ export default function HomePage() {
               WebkitTextFillColor: "transparent"
             }}>Fragmentation</span><br />
             Index
-          </h1>
+          </motion.h1>
 
-          <p className="anim-fade-up delay-2 sans" style={{
-            color: "rgba(232, 232, 240, 0.6)",
-            fontSize: "1.05rem",
-            letterSpacing: "0.02em",
-            lineHeight: 1.85,
-            maxWidth: "32rem",
-            margin: "0 auto 3.5rem",
-            fontWeight: 400
+          <motion.p variants={FADE_UP} className="sans" style={{
+             color: "rgba(232, 232, 240, 0.6)",
+             fontSize: "1.05rem",
+             letterSpacing: "0.02em",
+             lineHeight: 1.85,
+             maxWidth: "32rem",
+             margin: "0 auto 3.5rem",
+             fontWeight: 400
           }}>
             Measure the invisible forces that fragment your attention.
             Every cut, every sound spike, every word engineered to keep you watching.
-          </p>
+          </motion.p>
 
           {/* Stats — real numbers */}
-          <div className="anim-fade-up delay-3" style={{
+          <motion.div variants={FADE_UP} style={{
             display: "flex",
             justifyContent: "center",
             gap: "3rem",
@@ -158,7 +193,7 @@ export default function HomePage() {
           }}>
             {stats.map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
-                <div className="mono" style={{ fontSize: "1.3rem", fontWeight: 700, color: "#a78bfa", marginBottom: "0.2rem" }}>
+                <div className="mono" style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--primary)", marginBottom: "0.2rem" }}>
                   {s.v}
                 </div>
                 <div style={{ fontSize: "0.62rem", color: "rgba(232,232,240,0.3)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
@@ -166,10 +201,14 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
-          </div>
+          </motion.div>
 
           {/* UPLOAD CARD */}
-          <div className="anim-fade-up delay-4" style={{ maxWidth: "28rem", margin: "0 auto" }}>
+          <motion.div
+            variants={FADE_UP}
+            animate={FLOATING_ANIMATION}
+            style={{ maxWidth: "28rem", margin: "0 auto" }}
+          >
 
             {analyzed ? (
               <div className="card-glass" style={{ padding: "3rem 2.5rem", textAlign: "center" }}>
@@ -270,8 +309,8 @@ export default function HomePage() {
                 )}
               </div>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* MARQUEE */}
@@ -293,60 +332,82 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* FEATURES */}
+      {/* FEATURES - Bento box layout */}
       <section className="container-section" style={{ paddingTop: 0, paddingBottom: "6rem" }}>
-        <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
-          <p className="label-sm" style={{ marginBottom: "1rem" }}>How It Works</p>
-          <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 300, letterSpacing: "-0.01em" }}>
+        <motion.div 
+          initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }}
+          variants={STAGGER_CONTAINER}
+          style={{ textAlign: "center", marginBottom: "3.5rem" }}
+        >
+          <motion.p variants={FADE_UP} className="label-sm" style={{ marginBottom: "1rem" }}>How It Works</motion.p>
+          <motion.h2 variants={FADE_UP} style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 300, letterSpacing: "-0.01em" }}>
             Three modalities. One score.
-          </h2>
-        </div>
+          </motion.h2>
+        </motion.div>
 
-        <div style={{
+        <motion.div 
+          initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }}
+          variants={STAGGER_CONTAINER}
+          style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: "1.5rem",
           padding: "1rem",
         }}>
           {features.map((f, i) => (
-            <div key={i} className="card-glass card-hover" style={{ padding: "2rem 1.75rem" }}>
+            <motion.div 
+              variants={FADE_UP}
+              whileHover={{ y: -6, transition: { duration: 0.3 } }}
+              key={i} 
+              className="card-glass card-hover" 
+              style={{ 
+                padding: "2rem 1.75rem",
+                gridColumn: i === 0 || i === 3 ? "span 2" : "span 1", // Visily asymmetrical Bento style
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center"
+              }}
+            >
               <div style={{
                 fontSize: "1.4rem",
-                color: "#a78bfa",
+                color: "var(--primary)",
                 marginBottom: "1.25rem",
-                width: "3rem",
-                height: "3rem",
+                width: "4rem",
+                height: "4rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "rgba(167, 139, 250, 0.1)",
-                borderRadius: "12px",
-                border: "1px solid rgba(167, 139, 250, 0.2)"
+                background: "rgba(167, 139, 250, 0.05)",
+                borderRadius: "16px",
+                border: "1px solid rgba(167, 139, 250, 0.15)"
               }}>{f.icon}</div>
-              <div className="sans" style={{ fontWeight: 600, fontSize: "1rem", marginBottom: "0.75rem", color: "#ffffff" }}>
+              <div className="sans" style={{ fontWeight: 600, fontSize: "1.2rem", marginBottom: "0.75rem", color: "#ffffff" }}>
                 {f.title}
               </div>
-              <div className="sans" style={{ color: "rgba(232, 232, 240, 0.5)", fontSize: "0.85rem", lineHeight: 1.6 }}>
+              <div className="sans" style={{ color: "rgba(232, 232, 240, 0.5)", fontSize: "0.95rem", lineHeight: 1.6 }}>
                 {f.desc}
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        <div className="card-glass" style={{
+        <motion.div 
+          initial="hidden" whileInView="show" viewport={{ once: true }}
+          variants={FADE_UP}
+          className="card-glass" style={{
           marginTop: "3rem",
           padding: "3.5rem 2.5rem",
           textAlign: "center",
-          borderRadius: 0,
-          background: "linear-gradient(to top, rgba(167, 139, 250, 0.03), transparent)"
+          borderRadius: "24px",
+          background: "linear-gradient(to top, rgba(95, 75, 254, 0.05), transparent)"
         }}>
           <p className="label-sm" style={{ marginBottom: "1.5rem" }}>Explore More</p>
           <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link href="/compare"  className="btn-secondary">Compare Two Videos</Link>
             <Link href="/history"  className="btn-secondary">View History</Link>
-            <Link href="/reports"  className="btn-secondary">Wellness Reports</Link>
+            <Link href="/wellbeing"  className="btn-secondary">Wellness Reports</Link>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );
