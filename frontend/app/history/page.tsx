@@ -4,6 +4,17 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+
+const STAGGER_CONTAINER: any = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const FADE_UP: any = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 65, damping: 20 } }
+};
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<any[]>([]);
@@ -80,10 +91,16 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="container-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <motion.div 
+      className="container-section" 
+      style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
+      variants={STAGGER_CONTAINER}
+      initial="hidden"
+      animate="show"
+    >
 
       {/* HEADER */}
-      <div>
+      <motion.div variants={FADE_UP}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted)", marginBottom: "1rem" }}>
           <Link href="/" style={{ color: "var(--muted)", textDecoration: "none" }}>Home</Link>
           <span>/</span>
@@ -109,90 +126,96 @@ export default function HistoryPage() {
             </Link>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Summary stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+      <motion.div variants={FADE_UP} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
         {[
           { label: "Total Analyzed",  val: history.length, unit: "videos" },
           { label: "Avg AFI",          val: history.length ? (history.reduce((s, h) => s + (h.final_afi || 0), 0) / history.length).toFixed(1) : 0, unit: "/100" },
           { label: "High Stimulation", val: history.filter((h) => (h.final_afi || 0) >= 70).length, unit: "videos" },
         ].map((s, i) => (
-          <div key={i} className="card-glass" style={{ padding: "1.5rem" }}>
-            <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.9rem", marginBottom: "0.5rem" }}>{s.label}</div>
-            <div className="mono" style={{ fontSize: "2rem", fontWeight: 700, color: "#ffffff" }}>
+          <div key={i} className="card-glass" style={{ padding: "1.75rem 1.5rem" }}>
+            <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.95rem", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+            <div className="mono" style={{ fontSize: "2rem", fontWeight: 700, color: "var(--primary)" }}>
               {s.val}<span className="sans" style={{ fontSize: "0.85rem", color: "var(--muted-mid)", fontWeight: 500, marginLeft: "0.3rem" }}>{s.unit}</span>
             </div>
           </div>
         ))}
-      </div>
+      </motion.div>
 
       {/* TABLE */}
-      <div className="card-glass" style={{ overflow: "hidden", padding: "1rem 0" }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Video</th>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>AFI Score</th>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Category</th>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Visual</th>
-              <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((item) => (
-              <tr key={item.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
-                <td>
-                  <div className="sans" style={{ fontWeight: 500, fontSize: "0.95rem", maxWidth: "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>
-                    {item.url ? (
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>{item.url}</a>
-                    ) : (
-                      item.video_name || item.video_path || "Video"
-                    )}
-                  </div>
-                </td>
-                <td>
-                  <span className="mono" style={{ fontSize: "1.25rem", fontWeight: 700, color: getScoreColor(item.final_afi || 0) }}>
-                    {item.final_afi?.toFixed(2)}
-                  </span>
-                </td>
-                <td>
-                  <span className={`tag-badge ${getCategoryClass(item.category)}`} style={{ borderRadius: "4px" }}>
-                    {item.category}
-                  </span>
-                </td>
-                <td>
-                  <span className="mono" style={{ fontSize: "0.9rem", color: "var(--muted-mid)" }}>
-                    {item.visual_score?.toFixed(1) ?? "—"}
-                  </span>
-                </td>
-                <td>
-                  <span className="sans" style={{ fontSize: "0.9rem", color: "var(--muted-mid)" }}>
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </span>
-                </td>
+      <motion.div variants={FADE_UP} className="card-glass" style={{ overflow: "hidden", padding: "1.5rem 0" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Video</th>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>AFI Score</th>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Category</th>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Visual</th>
+                <th className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>Date</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <motion.tbody
+              variants={STAGGER_CONTAINER}
+              initial="hidden"
+              animate="show"
+            >
+              {history.map((item) => (
+                <motion.tr variants={FADE_UP} key={item.id} style={{ borderBottom: "1px solid var(--card-border)" }}>
+                  <td>
+                    <div className="sans" style={{ fontWeight: 500, fontSize: "0.95rem", maxWidth: "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#ffffff" }}>
+                      {item.url ? (
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: "4px" }}>{item.url}</a>
+                      ) : (
+                        item.video_name || item.video_path || "Video"
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span className="mono" style={{ fontSize: "1.25rem", fontWeight: 700, color: getScoreColor(item.final_afi || 0) }}>
+                      {item.final_afi?.toFixed(2)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`tag-badge ${getCategoryClass(item.category)}`} style={{ borderRadius: "100px", border: "none", padding: "0.4rem 1rem", letterSpacing: "0.1em" }}>
+                      {item.category}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="mono" style={{ fontSize: "0.95rem", color: "var(--muted-mid)" }}>
+                      {item.visual_score?.toFixed(1) ?? "—"}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="sans" style={{ fontSize: "0.95rem", color: "var(--muted-mid)" }}>
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </span>
+                  </td>
+                </motion.tr>
+              ))}
+            </motion.tbody>
+          </table>
+        </div>
+      </motion.div>
 
       {/* Footer nav */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
+      <motion.div variants={FADE_UP} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", paddingTop: "0.5rem" }}>
         {[
           { href: "/results",   icon: "←",  label: "Latest Results",  desc: "View most recent analysis" },
           { href: "/compare",   icon: "⇄",  label: "Compare Videos",  desc: "Side-by-side comparison" },
-          { href: "/wellness",  icon: "◎",  label: "Wellness",         desc: "Media health overview" },
+          { href: "/wellbeing", icon: "◎",  label: "Wellness",         desc: "Media health overview" },
         ].map((n) => (
           <Link key={n.href} href={n.href} style={{ textDecoration: "none" }}>
-            <div className="card-glass card-hover" style={{ padding: "1.5rem" }}>
-              <div className="mono" style={{ color: "var(--primary)", fontSize: "1.1rem", marginBottom: "0.5rem" }}>{n.icon}</div>
-              <div className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.3rem", color: "#ffffff" }}>{n.label}</div>
-              <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.8rem" }}>{n.desc}</div>
+            <div className="card-glass card-hover" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div className="mono" style={{ color: "var(--primary)", fontSize: "1.1rem", marginBottom: "0.75rem" }}>{n.icon}</div>
+              <div className="sans" style={{ fontWeight: 600, fontSize: "1rem", marginBottom: "0.3rem", color: "#ffffff" }}>{n.label}</div>
+              <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem" }}>{n.desc}</div>
             </div>
           </Link>
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
