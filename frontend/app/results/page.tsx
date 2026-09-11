@@ -103,10 +103,10 @@ export default function ResultsPage() {
   const circumference = 2 * Math.PI * 45;
   const dashOffset   = circumference - (score / 100) * circumference;
 
+  // Only Visual has a real per-video sub-score (optical flow).
+  // Audio/Text AFI sub-scores were removed — they were aliases of final_afi_score.
   const modalityData = [
     { name: "Visual", score: data.visual?.visual_score ?? 0 },
-    { name: "Audio",  score: data.audio?.audio_afi_score ?? 0 },
-    { name: "Text",   score: data.text?.text_afi_score ?? 0 },
   ];
 
   const timelineData =
@@ -203,7 +203,7 @@ export default function ResultsPage() {
               {`This video shows ${category?.toLowerCase()} levels of attention stimulation.` +
                 (data.visual?.visual_score > 70 ? " High visual fragmentation contributes significantly." : "") +
                 (score > 70 ? " Frequent audio spikes increase stimulation." : "") +
-                (data.text?.text_afi_score > 70 ? " Rapid on-screen text adds to cognitive load." : "")}
+                (data.text?.words_per_second > 3 ? " Rapid on-screen text adds to cognitive load." : "")}
             </p>
           ) : (
             <p className="sans" style={{ fontSize: "1rem", color: "var(--muted)", fontStyle: "italic" }}>
@@ -232,7 +232,7 @@ export default function ResultsPage() {
         <motion.div variants={FADE_UP} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
             <span style={{ width: "0.4rem", height: "0.4rem", borderRadius: "50%", background: "var(--primary)", boxShadow: "0 0 8px var(--primary)" }} />
-            <span className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", color: "var(--primary)", letterSpacing: "0.06em", textTransform: "uppercase" }}>ML Subsystem Checks</span>
+            <span className="sans" style={{ fontWeight: 600, fontSize: "0.95rem", color: "var(--primary)", letterSpacing: "0.06em", textTransform: "uppercase" }}>Signal Breakdown</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
             {insights.map((insight: string, i: number) => {
@@ -258,14 +258,14 @@ export default function ResultsPage() {
         <motion.div variants={FADE_UP} className="card-glass" style={{ padding: "2.5rem" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
             <div>
-              <h2 className="sans" style={{ fontWeight: 600, fontSize: "1.2rem", marginBottom: "0.25rem", color: "#ffffff" }}>Model Weighting</h2>
-              <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>What the ML model weighted most heavily for this score</p>
+              <h2 className="sans" style={{ fontWeight: 600, fontSize: "1.2rem", marginBottom: "0.25rem", color: "#ffffff" }}>Global Model Feature Weights</h2>
+              <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>How this RandomForest weights each feature across all videos — not specific to this prediction</p>
             </div>
             {topFeature && (
               <div style={{ background: "rgba(95, 75, 254, 0.08)", border: "1px solid rgba(95, 75, 254, 0.2)", borderRadius: "12px", padding: "0.75rem 1.25rem", textAlign: "right" }}>
-                <div className="sans" style={{ fontSize: "0.7rem", color: "var(--muted-mid)", marginBottom: "0.2rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Top driver</div>
+                <div className="sans" style={{ fontSize: "0.7rem", color: "var(--muted-mid)", marginBottom: "0.2rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Highest global weight</div>
                 <div className="sans" style={{ fontSize: "1rem", fontWeight: 600, color: "var(--primary)" }}>{topFeature.name}</div>
-                <div className="mono" style={{ fontSize: "0.8rem", color: "var(--muted-mid)" }}>{topFeature.value}% weight</div>
+                <div className="mono" style={{ fontSize: "0.8rem", color: "var(--muted-mid)" }}>{topFeature.value}% (model-wide)</div>
               </div>
             )}
           </div>

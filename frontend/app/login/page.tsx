@@ -3,6 +3,21 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+function extractApiError(data: any, fallback = "Something went wrong"): string {
+  const detail = data?.detail;
+  if (!detail) return fallback;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((e: any) => {
+      const loc = Array.isArray(e.loc) ? e.loc : [];
+      const field = loc.filter((s: any) => s !== "body").join(".");
+      const msg = e.msg || String(e);
+      return field ? `${field}: ${msg}` : msg;
+    }).join("; ");
+  }
+  return String(detail);
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -21,7 +36,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email: email.trim(), password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Login failed");
+      if (!res.ok) throw new Error(extractApiError(data, "Login failed"));
 
       // Store token + user info
       localStorage.setItem("token", data.access_token);
