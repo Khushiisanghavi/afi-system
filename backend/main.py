@@ -3,17 +3,23 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from backend.api.routes import router as analysis_router
 from backend.api.auth_routes import router as auth_router
 from backend.api.creator_routes import router as creator_router
 from backend.api.wellbeing_routes import router as wellbeing_router
 from backend.api.insight_routes import router as insight_router
 from backend.api.extension_routes import router as extension_router
+from backend.core.limiter import limiter
 from backend.database.db import engine
 from backend.database import models
 from backend.core.ml.model import AFIPredictor
 
 app = FastAPI(title="AFI API", version="2.2.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

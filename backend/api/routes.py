@@ -12,8 +12,10 @@ import hashlib
 from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
+
+from backend.core.limiter import limiter
 
 import yt_dlp
 
@@ -214,7 +216,9 @@ def _save_result(
 # ── File upload ───────────────────────────────────────────────────────────────
 
 @router.post("/analyze")
+@limiter.limit("5/minute")
 async def analyze_video(
+    request: Request,
     file: UploadFile = File(...),
     user: dict = Depends(get_optional_user),
 ):
@@ -244,7 +248,9 @@ async def analyze_video(
 # ── URL analysis ──────────────────────────────────────────────────────────────
 
 @router.post("/analyze-url")
+@limiter.limit("5/minute")
 async def analyze_url(
+    request: Request,
     body: URLAnalyzeRequest,
     user: dict = Depends(get_optional_user),
 ):
