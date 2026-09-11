@@ -25,7 +25,13 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-JWT_SECRET    = os.getenv("JWT_SECRET", "afi_dev_secret_change_in_production")
+_raw_secret = os.getenv("JWT_SECRET", "")
+if not _raw_secret or len(_raw_secret) < 32:
+    raise RuntimeError(
+        "JWT_SECRET env var is required and must be at least 32 characters. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+    )
+JWT_SECRET    = _raw_secret
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_M  = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))  # 24 h
 
