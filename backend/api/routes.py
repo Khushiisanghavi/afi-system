@@ -311,8 +311,17 @@ def get_history(user: dict = Depends(get_current_user)):
 
 # ── Model management ──────────────────────────────────────────────────────────
 
+def _require_admin(user: dict = Depends(get_current_user)):
+    """Dependency: require JWT + email in ADMIN_EMAILS env var."""
+    admin_emails_raw = os.getenv("ADMIN_EMAILS", "")
+    admin_emails = {e.strip().lower() for e in admin_emails_raw.split(",") if e.strip()}
+    if admin_emails and user.get("email", "").lower() not in admin_emails:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
 @router.post("/model/retrain")
-def retrain_model():
+def retrain_model(_: dict = Depends(_require_admin)):
     from backend.core.ml.retrain import retrain_from_db
     metrics = retrain_from_db()
     return {"status": "retrained", "metrics": metrics}
