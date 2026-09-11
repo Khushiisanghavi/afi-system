@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 annotated-doc==0.0.4
 annotated-types==0.7.0
 bcrypt==4.3.0
@@ -31,7 +32,6 @@ networkx==3.6.1
 ninja==1.13.0
 numba==0.63.1
 numpy==2.3.5
-opencv-python==4.13.0.92
 opencv-python-headless==4.13.0.92
 packaging==26.0
 passlib==1.7.4
@@ -62,8 +62,8 @@ starlette==0.52.1
 sympy==1.14.0
 threadpoolctl==3.6.0
 tifffile==2026.2.20
-torch==2.10.0
-torchvision==0.25.0
+torch==2.10.0+cpu
+torchvision==0.25.0+cpu
 tqdm==4.67.3
 typing-inspection==0.4.2
 typing_extensions==4.15.0

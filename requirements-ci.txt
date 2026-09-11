@@ -1,14 +1,16 @@
-# Lightweight requirements for CI — excludes torch/torchvision/llvmlite/numba
-# (easyocr's heavy ML deps). test_text_analyzer is skipped when easyocr
-# is not installed. All other pipeline tests run.
+# Lightweight requirements for CI.
+# Excludes easyocr + its torch/torchvision/llvmlite/numba chain (~3 GB).
+# test_text_analyzer is marked skipif(not HAS_EASYOCR) so CI skips it cleanly.
+# Dev tools (pytest, ruff) are in requirements-dev.txt.
 anyio
 audioread
+bcrypt
 certifi
+cffi
 charset-normalizer
 click
 colorama
 decorator
-easyocr
 fastapi
 ffmpeg-python
 filelock
@@ -31,11 +33,9 @@ passlib[bcrypt]
 pillow
 platformdirs
 pooch
-pyclipper
 pycparser
 pydantic
 pydantic_core
-python-bidi
 python-dotenv
 python-multipart
 PyJWT
@@ -47,16 +47,17 @@ scikit-learn
 scipy
 setuptools
 shapely
+slowapi
+SQLAlchemy
 soundfile
 soxr
-SQLAlchemy
 starlette
 sympy
 threadpoolctl
+tifffile
 tqdm
+typing-inspection
 typing_extensions
 urllib3
 uvicorn
 yt-dlp
-pytest
-ruff
