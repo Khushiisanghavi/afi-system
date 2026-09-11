@@ -18,12 +18,13 @@ class TextAnalyzer:
     Extracts and quantifies text stimulation metrics for AFI text sub-score.
 
     Optimisations vs original:
-    - sample_interval raised to 2.0s (text stays on screen for multiple seconds)
+    - sample_interval = 5.0s (~11 frames for a 57 s video vs 28 at 2 s).
+      Text density is a coarse metric; 1 sample per 5 s is sufficient.
     - Frames resized to max 640px wide before OCR (3-4x faster, same accuracy)
     - EasyOCR reader is a module-level singleton (no re-init per request)
     """
 
-    def __init__(self, video_path: str, sample_interval: float = 2.0):
+    def __init__(self, video_path: str, sample_interval: float = 5.0):
         self.video_path = video_path
         self.sample_interval = sample_interval
         self.reader = _get_reader()
