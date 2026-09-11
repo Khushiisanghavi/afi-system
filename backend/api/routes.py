@@ -17,6 +17,7 @@ from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 
 from backend.core.limiter import limiter
+from backend.core.scoring.sub_scores import audio_sub_score, text_sub_score
 
 import yt_dlp
 
@@ -181,11 +182,22 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
 
     print(f"[pipeline] timing={timing}")
 
+    # ── Compute real sub-scores from the shared canonical formulas ────────────
+    a_score = audio_sub_score(
+        audio_metrics.get("tempo_bpm", 0.0),
+        audio_metrics.get("rms_energy", 0.0),
+        audio_metrics.get("amplitude_spike_ratio", 0.0),
+        audio_metrics.get("zero_crossing_rate", 0.0),
+    )
+    t_score = text_sub_score(
+        text_metrics.get("words_per_second", 0.0),
+        text_metrics.get("avg_text_area_ratio", 0.0),
+        text_metrics.get("text_change_rate", 0.0),
+    )
+
     # ── Build response ─────────────────────────────────────────────────────────
-    # audio_afi_score / text_afi_score REMOVED — they were aliases of final_afi_score,
-    # not independent sub-scores. The frontend shows visual_score (real) only.
-    audio_response = {**audio_metrics}
-    text_response  = {**text_metrics}
+    audio_response = {**audio_metrics, "audio_score": a_score}
+    text_response  = {**text_metrics,  "text_score":  t_score}
     final_response = {
         "final_afi_score":    prediction.final_afi_score,
         "final_category":     prediction.final_category,
@@ -218,8 +230,8 @@ def _save_result(
         text_change_rate=text_metrics.get("text_change_rate"),
         final_afi=final_response["final_afi_score"],
         category=final_response["final_category"],
-        audio_score=final_response["final_afi_score"],
-        text_score=final_response["final_afi_score"],
+        audio_score=audio_metrics.get("audio_score", final_response["final_afi_score"]),
+        text_score=text_metrics.get("text_score", final_response["final_afi_score"]),
     )
     db.add(record)
     db.commit()
@@ -246,7 +258,7 @@ async def analyze_video(
         db,
         url=None, video_path=file_path, video_name=file.filename,
         visual_data=visual_data, final_response=final_resp,
-        audio_metrics=audio_raw, text_metrics=text_raw,
+        audio_metrics=audio_resp, text_metrics=text_resp,
         user_id=user["sub"] if user else None,
     )
 
@@ -300,7 +312,7 @@ async def analyze_url(
         db,
         url=url, video_path=None, video_name=video_name,
         visual_data=visual_data, final_response=final_resp,
-        audio_metrics=audio_raw, text_metrics=text_raw,
+        audio_metrics=audio_resp, text_metrics=text_resp,
         user_id=user["sub"] if user else None,
     )
 
