@@ -4,7 +4,7 @@ import shutil
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
 from backend.auth.jwt_handler import get_current_user
@@ -26,6 +26,7 @@ from backend.core.audio.audio_analysis import AudioAnalyzer
 from backend.core.text.ocr_analysis import TextAnalyzer
 from backend.core.video.visual_pipeline import analyze_visual_component
 
+from backend.core.limiter import limiter
 from backend.database.db import get_db
 from backend.database.models import AnalysisResult, CreatorAnalysis
 
@@ -36,7 +37,9 @@ router = APIRouter()
 
 
 @router.post("/analyze")
+@limiter.limit("5/minute")
 async def creator_analyze(
+    request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
