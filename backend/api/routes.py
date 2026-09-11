@@ -153,7 +153,6 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
                 audio_metrics=audio_metrics,
                 text_metrics=text_metrics,
                 feature_importance=prediction.feature_importance,
-                model_confidence=prediction.model_confidence,
             )
             llm_insight = call_groq_vision(prompt, frames_b64, max_tokens=650)
         except Exception as e:
@@ -178,9 +177,8 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
         "final_category":     prediction.final_category,
         "ml_powered":         True,
         "feature_importance": prediction.feature_importance,
-        "model_confidence":   prediction.model_confidence,
-        "insights":           insights,      # rule-based bullets — unchanged
-        "llm_insight":        llm_insight,   # LLM narrative — None if Groq fails
+        "insights":           insights,
+        "llm_insight":        llm_insight,
     }
 
     return visual_data, audio_response, text_response, final_response, audio_metrics, text_metrics
@@ -304,19 +302,6 @@ def get_history(user: dict = Depends(get_current_user)):
     results = (
         db.query(AnalysisResult)
         .filter(AnalysisResult.user_id == user["sub"])
-        .order_by(AnalysisResult.created_at.desc())
-        .all()
-    )
-    db.close()
-    return results
-
-
-@router.get("/history/all")
-def get_all_history():
-    """Unprotected fallback — returns all history."""
-    db = SessionLocal()
-    results = (
-        db.query(AnalysisResult)
         .order_by(AnalysisResult.created_at.desc())
         .all()
     )
