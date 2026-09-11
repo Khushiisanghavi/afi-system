@@ -108,3 +108,18 @@ Copy `.env.example` to `.env` and fill in values before starting the backend.
 <!-- screenshot: wellbeing profile -->
 <!-- screenshot: creator studio results -->
 <!-- screenshot: chrome extension overlay -->
+
+---
+
+## Text Analysis Limitations
+
+The OpenCV text detection backend (`TextAnalyzerCV`) detects high-contrast text-like regions using MSER. It cannot distinguish actual text from high-contrast textures (e.g. patterned clothing, busy backgrounds). This means:
+
+- **`text_region_rate` / `avg_text_area_ratio`** are inflated by background texture noise. On the three storage videos, MSER covers 26–58% of each frame versus EasyOCR's 1–4%, indicating the signal is dominated by non-text regions.
+- **`words_per_second`** in the CV backend is a calibrated alias (`text_region_rate × 0.0085`). Calibration against EasyOCR yields R²=−0.24 — the blob count has no meaningful linear relationship with actual word density. Do not interpret it as real word density.
+- **`text_change_rate`** is the one reliable CV metric. The Jaccard-grid implementation (8×8 spatial grid, threshold 0.2) correctly detects spatial shifts in high-contrast regions and matches EasyOCR's change-rate on the test videos.
+- **AFI text_score delta** between CV and EasyOCR backends is 20–37 points across the three storage videos. The CV backend is **not recommended for adoption** as a word-count proxy without a text-segmentation step that filters background blobs.
+
+EasyOCR reads actual characters and is unaffected by texture patterns, but is ~10–15× slower (2–9 s per video versus 0.2–0.6 s for OpenCV).
+
+See `scripts/compare_text_backends.py` for the side-by-side benchmark.
