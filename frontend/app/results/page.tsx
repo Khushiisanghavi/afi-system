@@ -79,7 +79,6 @@ export default function ResultsPage() {
             duration_seconds:     parsed.text?.duration_seconds ?? 0,
           },
           feature_importance: parsed.final?.feature_importance ?? {},
-          model_confidence:   parsed.final?.model_confidence ?? 0,
         }),
       })
         .then((r) => r.ok ? r.json() : null)
@@ -120,7 +119,6 @@ export default function ResultsPage() {
     : null;
 
   const mlPowered      = data.final?.ml_powered ?? false;
-  const confidence     = data.final?.model_confidence ?? null;
   const insights       = data.final?.insights ?? [];
   const rawImportance  = data.final?.feature_importance ?? {};
 
@@ -129,7 +127,6 @@ export default function ResultsPage() {
     .sort((a, b) => b.value - a.value);
 
   const topFeature = importanceData[0];
-  const confColor  = confidence == null ? "#6b6890" : confidence >= 0.75 ? "#34d399" : confidence >= 0.5 ? "#facc15" : "#f87171";
 
   return (
     <motion.div 
@@ -184,19 +181,6 @@ export default function ResultsPage() {
             </div>
           </div>
           <span className={`tag-badge ${getCategoryClass(category)}`} style={{ borderRadius: "100px", fontSize: "0.75rem", padding: "0.4rem 1.25rem", letterSpacing: "0.15em", border: "none" }}>{category}</span>
-          
-          {/* Confidence bar */}
-          {confidence !== null && (
-            <div style={{ marginTop: "2rem", width: "100%", maxWidth: "200px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-                <span className="sans" style={{ fontSize: "0.7rem", color: "var(--muted-mid)" }}>Model confidence</span>
-                <span className="mono" style={{ fontSize: "0.75rem", color: confColor }}>{Math.round(confidence * 100)}%</span>
-              </div>
-              <div style={{ height: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "9999px", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${confidence * 100}%`, background: confColor, borderRadius: "9999px", transition: "width 1.2s ease" }} />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* AI Insight Card */}

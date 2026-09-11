@@ -153,7 +153,6 @@ async def creator_analyze(
                 "final_category":     prediction.final_category,
                 "ml_powered":         True,
                 "feature_importance": prediction.feature_importance,
-                "model_confidence":   prediction.model_confidence,
                 "insights":           afi_insights,
             },
             "creator": {
