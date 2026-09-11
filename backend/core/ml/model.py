@@ -4,6 +4,8 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Optional
 
+from backend.core.scoring.sub_scores import audio_sub_score, text_sub_score
+
 FEATURE_KEYS = [
     "tempo_bpm",
     "rms_energy",
@@ -63,16 +65,8 @@ def _generate_synthetic_data(n: int = 800, seed: int = 42):
         text_area   = rng.uniform(0, 0.4)
         text_change = rng.uniform(0, 3)
 
-        tempo_norm  = np.clip((tempo - 60) / 120, 0, 1)
-        rms_norm    = np.clip((rms - 0.01) / 0.14, 0, 1)
-        spike_norm  = min(spike_ratio / 0.08, 1.0)
-        zcr_norm    = np.clip((zcr - 0.02) / 0.13, 0, 1)
-        audio_score = (0.35*tempo_norm + 0.25*rms_norm + 0.25*spike_norm + 0.15*zcr_norm) * 100
-
-        wps_norm    = np.clip(wps / 5.0, 0, 1)
-        area_norm   = np.clip(text_area / 0.3, 0, 1)
-        chng_norm   = np.clip(text_change / 2.0, 0, 1)
-        text_score  = (0.4*wps_norm + 0.35*area_norm + 0.25*chng_norm) * 100
+        audio_score = audio_sub_score(tempo, rms, spike_ratio, zcr)
+        text_score  = text_sub_score(wps, text_area, text_change)
 
         final = 0.4*visual + 0.35*audio_score + 0.25*text_score
         # Reduced noise so synthetic labels are tighter — model learns cleaner signal
