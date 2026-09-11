@@ -335,10 +335,27 @@ def retrain_model():
 
 @router.get("/model/info")
 def model_info():
-    from backend.core.ml.model import MODEL_PATH
     import json
+    from backend.core.ml.model import MODEL_PATH, FEATURE_KEYS, get_predictor
+    predictor = get_predictor()
+    m = predictor._model
+    info = {
+        "model_type":     type(m).__name__,
+        "n_estimators":   m.n_estimators,
+        "max_depth":      m.max_depth,
+        "n_features_in_": m.n_features_in_,
+        "feature_names":  FEATURE_KEYS,
+        "training_data":  "synthetic",
+        "note": (
+            "Trained on 800 synthetic samples derived from a deterministic formula. "
+            "R² and MAE reflect held-out synthetic data only."
+        ),
+    }
     metrics_path = MODEL_PATH.replace(".pkl", "_metrics.json")
     if os.path.exists(metrics_path):
         with open(metrics_path) as f:
-            return json.load(f)
-    return {"version": "rf_v1", "note": "no metrics file yet — run /model/retrain"}
+            saved = json.load(f)
+        info["mae"]     = saved.get("mae")
+        info["r2"]      = saved.get("r2")
+        info["n_train"] = saved.get("n_train")
+    return info
