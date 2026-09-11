@@ -85,3 +85,26 @@ npm run dev
 3. Enable **Developer mode** in the top right.
 4. Click **Load unpacked** and select the `AFI-System/extension` directory.
 5. Log in through the web dashboard so the extension synchronizes your authentication state!
+
+---
+
+## ⚙️ Configuration
+
+Copy `.env.example` to `.env` and fill in values before starting the backend.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `JWT_SECRET` | **Yes** | — | Secret key for signing JWTs. Must be ≥ 32 chars. Generate with: `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
+| `GROQ_API_KEY` | **Yes** (for LLM insights) | — | Groq API key. Without it, all `/insights/*` routes return 503. |
+| `JWT_EXPIRE_MINUTES` | No | `1440` (24 h) | Token lifetime in minutes. |
+| `ADMIN_EMAILS` | No | — | Comma-separated email addresses allowed to call `POST /model/retrain`. |
+
+---
+
+## 📸 Screenshots
+
+<!-- screenshot: dashboard (home / upload) -->
+<!-- screenshot: results page with AFI score and timeline -->
+<!-- screenshot: wellbeing profile -->
+<!-- screenshot: creator studio results -->
+<!-- screenshot: chrome extension overlay -->
