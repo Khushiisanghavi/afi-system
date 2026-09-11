@@ -103,10 +103,32 @@ export default function ResultsPage() {
   const circumference = 2 * Math.PI * 45;
   const dashOffset   = circumference - (score / 100) * circumference;
 
-  // Only Visual has a real per-video sub-score (optical flow).
-  // Audio/Text AFI sub-scores were removed — they were aliases of final_afi_score.
   const modalityData = [
-    { name: "Visual", score: data.visual?.visual_score ?? 0 },
+    {
+      name: "Visual",
+      score: data.visual?.visual_score ?? 0,
+      features: [
+        { label: "Scenes", value: (data.visual?.timeline?.length ?? 0) + " cuts" },
+      ],
+    },
+    {
+      name: "Audio",
+      score: data.audio?.audio_score ?? 0,
+      features: [
+        { label: "Tempo", value: (data.audio?.tempo_bpm ?? 0).toFixed(0) + " BPM" },
+        { label: "RMS",   value: (data.audio?.rms_energy ?? 0).toFixed(3) },
+        { label: "Spikes", value: ((data.audio?.amplitude_spike_ratio ?? 0) * 100).toFixed(1) + "%" },
+      ],
+    },
+    {
+      name: "Text",
+      score: data.text?.text_score ?? 0,
+      features: [
+        { label: "Words/s", value: (data.text?.words_per_second ?? 0).toFixed(2) },
+        { label: "Area",    value: ((data.text?.avg_text_area_ratio ?? 0) * 100).toFixed(1) + "%" },
+        { label: "Changes/s", value: (data.text?.text_change_rate ?? 0).toFixed(2) },
+      ],
+    },
   ];
 
   const timelineData =
@@ -211,18 +233,31 @@ export default function ResultsPage() {
             </p>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginTop: "2.5rem" }}>
-            {modalityData.map((m) => (
-              <div key={m.name} style={{ background: "rgba(255,255,255,0.02)", borderRadius: "16px", padding: "1.25rem", border: "1px solid var(--card-border)" }}>
-                <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{m.name}</div>
-                <div className="mono" style={{ fontSize: "1.6rem", fontWeight: 700, color: m.score > 70 ? "#f87171" : m.score > 50 ? "#fb923c" : "var(--primary)" }}>
-                  {typeof m.score === "number" ? m.score.toFixed(1) : m.score}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem", marginTop: "2.5rem" }}>
+            {modalityData.map((m) => {
+              const color = m.score > 70 ? "#f87171" : m.score > 50 ? "#fb923c" : "var(--primary)";
+              return (
+                <div key={m.name} style={{ background: "rgba(255,255,255,0.02)", borderRadius: "16px", padding: "1.25rem", border: "1px solid var(--card-border)" }}>
+                  <div className="sans" style={{ color: "var(--muted-mid)", fontSize: "0.85rem", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{m.name}</div>
+                  <div className="mono" style={{ fontSize: "1.6rem", fontWeight: 700, color }}>
+                    {typeof m.score === "number" ? m.score.toFixed(1) : m.score}
+                  </div>
+                  <div style={{ marginTop: "0.85rem", height: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "9999px", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${m.score}%`, background: color, borderRadius: "9999px", transition: "width 1.2s cubic-bezier(0.16,1,0.3,1)" }} />
+                  </div>
+                  {m.features && m.features.length > 0 && (
+                    <div style={{ marginTop: "0.85rem", display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+                      {m.features.map((f: any) => (
+                        <div key={f.label} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                          <span style={{ color: "var(--muted-mid)" }}>{f.label}</span>
+                          <span className="mono" style={{ color: "var(--muted)" }}>{f.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div style={{ marginTop: "0.85rem", height: "4px", background: "rgba(255,255,255,0.08)", borderRadius: "9999px", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${m.score}%`, background: m.score > 70 ? "#f87171" : m.score > 50 ? "#fb923c" : "var(--primary)", borderRadius: "9999px", transition: "width 1.2s cubic-bezier(0.16,1,0.3,1)" }} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </motion.div>
