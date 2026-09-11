@@ -12,6 +12,39 @@ except ImportError:
     HAS_EASYOCR = False
 
 
+# ── Sub-score distinctness ────────────────────────────────────────────────────
+
+@pytest.mark.skipif(not HAS_EASYOCR, reason="easyocr not installed (full venv required)")
+def test_sub_scores_are_distinct(fixture_video):
+    """
+    audio_score, text_score, and final_afi_score must all be different.
+    If any two are equal it likely means one is an alias of another.
+    """
+    from backend.core.audio.audio_analysis import AudioAnalyzer
+    from backend.core.text.ocr_analysis import TextAnalyzer
+    from backend.core.video.visual_pipeline import analyze_visual_component
+    from backend.core.ml.model import get_predictor
+    from backend.core.scoring.sub_scores import audio_sub_score, text_sub_score
+
+    audio = AudioAnalyzer(fixture_video).analyze()
+    text  = TextAnalyzer(fixture_video).analyze()
+    visual = analyze_visual_component(fixture_video)
+
+    a_score = audio_sub_score(
+        audio["tempo_bpm"], audio["rms_energy"],
+        audio["amplitude_spike_ratio"], audio["zero_crossing_rate"],
+    )
+    t_score = text_sub_score(
+        text["words_per_second"], text["avg_text_area_ratio"], text["text_change_rate"],
+    )
+    prediction = get_predictor().predict(audio, visual, text)
+    final = prediction.final_afi_score
+
+    assert a_score != t_score,   f"audio_score == text_score == {a_score}"
+    assert a_score != final,     f"audio_score == final_afi_score == {a_score}"
+    assert t_score != final,     f"text_score  == final_afi_score == {t_score}"
+
+
 # ── Video opens ───────────────────────────────────────────────────────────────
 
 def test_video_opens(fixture_video):
@@ -44,10 +77,10 @@ def test_visual_timeline(fixture_video):
         compute_overall_visual_score,
     )
     timeline = generate_visual_timeline(fixture_video)
-    assert timeline is None or isinstance(timeline, list)
-    if timeline:
-        score = compute_overall_visual_score(timeline)
-        assert 0.0 <= score <= 100.0
+    assert isinstance(timeline, list) and len(timeline) > 0, \
+        "generate_visual_timeline must return a non-empty list (raises on failure)"
+    score = compute_overall_visual_score(timeline)
+    assert 0.0 <= score <= 100.0
 
 
 # ── Audio analyzer ────────────────────────────────────────────────────────────
