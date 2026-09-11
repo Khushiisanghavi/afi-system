@@ -11,6 +11,7 @@ __pycache__/
 
 # Video files
 *.mp4
+!backend/tests/fixtures/*.mp4
 
 # Local sample videos
 sample_video/
