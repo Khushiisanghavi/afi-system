@@ -6,16 +6,23 @@ from groq import Groq
 
 load_dotenv()
 
-api_key = os.environ.get("GROQ_API_KEY")
-if not api_key:
-    raise RuntimeError("GROQ_API_KEY not found — check your .env file at project root")
-
-client = Groq(api_key=api_key)
-
 # llama-3.2-11b-vision-preview for raw visual analysis, 3.3-70b for complex reasoning
 VISION_MODEL = "llama-3.2-11b-vision-preview"
 TEXT_MODEL   = "llama-3.3-70b-versatile"
 DB_PATH      = "backend/afi.db"
+
+_client: Groq | None = None
+
+
+def _get_client() -> Groq:
+    """Return Groq client, constructing it on first use."""
+    global _client
+    if _client is None:
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError("GROQ_API_KEY not configured")
+        _client = Groq(api_key=api_key)
+    return _client
 
 
 # ── Cache helpers ─────────────────────────────────────────────────────────────
@@ -72,7 +79,7 @@ def call_groq_vision(prompt: str, frames_b64: list[str], max_tokens: int = 700) 
     ]
     content.append({"type": "text", "text": prompt})
 
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model=VISION_MODEL,
         messages=[{"role": "user", "content": content}],
         max_tokens=max_tokens,
@@ -89,7 +96,7 @@ def call_groq_text(prompt: str, max_tokens: int = 700) -> str:
     if cached:
         return cached
 
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model=TEXT_MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=max_tokens,
