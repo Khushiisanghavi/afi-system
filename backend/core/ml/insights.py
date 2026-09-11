@@ -84,6 +84,9 @@ def generate_insights(
         }
         label = labels.get(top, top)
         imp   = prediction.feature_importance[top]
-        insights.append(f"Primary AFI driver: {label} ({imp:.0%} of model weight).")
+        insights.append(
+            f"Global model weight: {label} has the highest model-wide importance ({imp:.0%}). "
+            "This is the same for every video, not specific to this prediction."
+        )
 
     return insights

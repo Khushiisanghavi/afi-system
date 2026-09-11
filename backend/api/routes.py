@@ -8,9 +8,10 @@ Changes from previous version:
 """
 
 import os
+import time
 import hashlib
 from urllib.parse import urlparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, Future
 
 from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
@@ -67,57 +68,69 @@ def _run_text(file_path: str):
     return analyzer.analyze()
 
 
+def _timed(fn, *args) -> tuple:
+    """Run fn(*args), return (result, elapsed_ms)."""
+    t0 = time.perf_counter()
+    result = fn(*args)
+    return result, round((time.perf_counter() - t0) * 1000)
+
+
 def _run_pipeline(file_path: str, fast_mode: bool = False):
     """
     Wave 1 (parallel): visual, audio, text analysis
     Wave 2 (parallel): ML prediction + keyframe extraction
     Wave 3: LLM insight (needs prediction + frames from wave 2)
+
+    Visual failure is hard — raises HTTPException 500 naming the stage.
+    Audio/text failure is soft — returns zeros and logs a warning.
     """
-    visual_data = audio_metrics = text_metrics = None
-    errors = []
+    timing: dict[str, int] = {}
 
     # ── Wave 1: Run all three analyzers in parallel ───────────────────────────
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = {
-            executor.submit(_run_visual, file_path): "visual",
-            executor.submit(_run_audio,  file_path): "audio",
-            executor.submit(_run_text,   file_path): "text",
-        }
-        for future in as_completed(futures):
-            name = futures[future]
-            try:
-                result = future.result()
-                if name == "visual":
-                    visual_data = result
-                elif name == "audio":
-                    audio_metrics = result
-                elif name == "text":
-                    text_metrics = result
-            except Exception as e:
-                errors.append(f"{name}: {e}")
-                if name == "visual":
-                    visual_data = {"visual_score": 0, "timeline": []}
-                elif name == "audio":
-                    audio_metrics = {
-                        "tempo_bpm": 0, "rms_energy": 0,
-                        "amplitude_spike_ratio": 0, "zero_crossing_rate": 0,
-                        "duration_seconds": 0,
-                    }
-                elif name == "text":
-                    text_metrics = {
-                        "total_words": 0, "words_per_second": 0,
-                        "avg_words_per_frame": 0, "avg_text_area_ratio": 0,
-                        "text_change_rate": 0, "duration_seconds": 0,
-                    }
+    visual_data = audio_metrics = text_metrics = None
+    soft_errors: list[str] = []
 
-    if errors:
-        print(f"[pipeline] Non-fatal errors: {errors}")
+    t_wave1 = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        f_visual: Future = executor.submit(_timed, _run_visual, file_path)
+        f_audio:  Future = executor.submit(_timed, _run_audio,  file_path)
+        f_text:   Future = executor.submit(_timed, _run_text,   file_path)
+
+        # Visual — hard failure
+        try:
+            visual_data, timing["visual_ms"] = f_visual.result()
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Visual analysis failed: {exc}") from exc
+
+        # Audio — soft failure (non-zero defaults)
+        try:
+            audio_metrics, timing["audio_ms"] = f_audio.result()
+        except Exception as exc:
+            soft_errors.append(f"audio: {exc}")
+            audio_metrics = {
+                "tempo_bpm": 0.0, "rms_energy": 0.0,
+                "amplitude_spike_ratio": 0.0, "zero_crossing_rate": 0.0,
+                "duration_seconds": 0.0,
+            }
+            timing["audio_ms"] = -1
+
+        # Text/OCR — soft failure
+        try:
+            text_metrics, timing["ocr_ms"] = f_text.result()
+        except Exception as exc:
+            soft_errors.append(f"text/ocr: {exc}")
+            text_metrics = {
+                "total_words": 0, "words_per_second": 0.0,
+                "avg_words_per_frame": 0.0, "avg_text_area_ratio": 0.0,
+                "text_change_rate": 0.0, "duration_seconds": 0.0,
+            }
+            timing["ocr_ms"] = -1
+
+    timing["wave1_ms"] = round((time.perf_counter() - t_wave1) * 1000)
+    if soft_errors:
+        print(f"[pipeline] Soft errors in wave 1: {soft_errors}")
 
     # ── Wave 2: ML prediction + keyframe extraction in parallel ───────────────
-    # Keyframe extraction doesn't need prediction, so it can run alongside it
-    prediction = None
-    frames_b64 = []
-
     def _run_prediction():
         predictor = get_predictor()
         return predictor.predict(audio_metrics, visual_data, text_metrics)
@@ -128,26 +141,26 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
         try:
             from backend.services.keyframe_extractor import extract_keyframes
             return extract_keyframes(file_path, n_frames=3)
-        except Exception as e:
-            print(f"[pipeline] Keyframe extraction failed (non-fatal): {e}")
+        except Exception as exc:
+            print(f"[pipeline] Keyframe extraction failed (non-fatal): {exc}")
             return []
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        pred_future   = executor.submit(_run_prediction)
-        frames_future = executor.submit(_run_keyframes)
-        prediction    = pred_future.result()    # must succeed — no fallback
-        frames_b64    = frames_future.result()  # [] on failure, LLM skipped gracefully
+        f_pred   = executor.submit(_timed, _run_prediction)
+        f_frames = executor.submit(_timed, _run_keyframes)
+        prediction, timing["ml_predict_ms"]        = f_pred.result()
+        frames_b64, timing["keyframe_extract_ms"]  = f_frames.result()
 
     # ── Rule-based insights (fast, no API call) ───────────────────────────────
     insights = generate_insights(audio_metrics, visual_data, text_metrics, prediction)
 
     # ── Wave 3: LLM insight (uses prediction + frames) ────────────────────────
     llm_insight = None
+    t_llm = time.perf_counter()
     if frames_b64 and not fast_mode:
         try:
             from backend.services.groq_client import call_groq_vision
             from backend.services.insight_prompts import results_prompt
-
             prompt = results_prompt(
                 final_afi_score=prediction.final_afi_score,
                 final_category=prediction.final_category,
@@ -157,23 +170,22 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
                 feature_importance=prediction.feature_importance,
             )
             llm_insight = call_groq_vision(prompt, frames_b64, max_tokens=650)
-        except Exception as e:
-            print(f"[pipeline] LLM insight failed (non-fatal): {e}")
-            llm_insight = None
-    else:
-        print("[pipeline] No frames extracted — skipping LLM insight")
+        except Exception as exc:
+            print(f"[pipeline] LLM insight failed (non-fatal): {exc}")
+    timing["llm_ms"] = round((time.perf_counter() - t_llm) * 1000)
+
+    timing["total_ms"] = sum(v for v in [
+        timing.get("wave1_ms", 0), timing.get("ml_predict_ms", 0),
+        timing.get("keyframe_extract_ms", 0), timing.get("llm_ms", 0),
+    ])
+
+    print(f"[pipeline] timing={timing}")
 
     # ── Build response ─────────────────────────────────────────────────────────
-    audio_response = {
-        **audio_metrics,
-        "audio_afi_score": prediction.final_afi_score,
-        "audio_category":  prediction.final_category,
-    }
-    text_response = {
-        **text_metrics,
-        "text_afi_score": prediction.final_afi_score,
-        "text_category":  prediction.final_category,
-    }
+    # audio_afi_score / text_afi_score REMOVED — they were aliases of final_afi_score,
+    # not independent sub-scores. The frontend shows visual_score (real) only.
+    audio_response = {**audio_metrics}
+    text_response  = {**text_metrics}
     final_response = {
         "final_afi_score":    prediction.final_afi_score,
         "final_category":     prediction.final_category,
@@ -181,6 +193,7 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
         "feature_importance": prediction.feature_importance,
         "insights":           insights,
         "llm_insight":        llm_insight,
+        "stage_timings":      timing,
     }
 
     return visual_data, audio_response, text_response, final_response, audio_metrics, text_metrics

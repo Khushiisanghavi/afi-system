@@ -3,6 +3,21 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+function extractApiError(data: any, fallback = "Something went wrong"): string {
+  const detail = data?.detail;
+  if (!detail) return fallback;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((e: any) => {
+      const loc = Array.isArray(e.loc) ? e.loc : [];
+      const field = loc.filter((s: any) => s !== "body").join(".");
+      const msg = e.msg || String(e);
+      return field ? `${field}: ${msg}` : msg;
+    }).join("; ");
+  }
+  return String(detail);
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -25,7 +40,7 @@ export default function SignupPage() {
         body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Signup failed");
+      if (!res.ok) throw new Error(extractApiError(data, "Signup failed"));
 
       // Store token + user info
       localStorage.setItem("token", data.access_token);
