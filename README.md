@@ -59,11 +59,14 @@ The browser extension acts as the data-bridge. Once authenticated (syncing the w
 ## 🚀 Getting Started
 
 ### 1. Boot up the Backend (Python/FastAPI)
+
+Run all commands from the **repo root** (not inside `backend/`):
+
 ```bash
-cd backend
 python -m venv venv
 # Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env          # then fill in JWT_SECRET and GROQ_API_KEY
 uvicorn backend.main:app --reload
 ```
 *The backend will be live at `http://127.0.0.1:8000`*
