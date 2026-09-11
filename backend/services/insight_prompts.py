@@ -22,7 +22,6 @@ def results_prompt(
     audio_metrics: dict,
     text_metrics: dict,
     feature_importance: dict,
-    model_confidence: float,
     visual_description: str,
 ) -> str:
     return f"""You are a human digital wellbeing coach watching a video. 

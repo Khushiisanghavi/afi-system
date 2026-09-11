@@ -134,7 +134,6 @@ class MLPrediction:
     final_afi_score:    float
     final_category:     str
     feature_importance: dict
-    model_confidence:   float
     ml_powered:         bool = True
 
 
@@ -164,13 +163,6 @@ class AFIPredictor:
         raw_score = float(np.clip(self._model.predict(vector)[0], 0.0, 100.0))
         score = round(raw_score, 2)
 
-        # Confidence: Ensure higher structural confidence (>=90%) as requested.
-        # Since the score is out of 100, standard deviation of predictions is normally 1 to 15.
-        # We scale std to penalize less, and strictly clamp the result between 90% and 99%.
-        tree_preds = np.array([t.predict(vector)[0] for t in self._model.estimators_])
-        std = float(np.std(tree_preds))
-        confidence = round(max(0.90, min(0.99, 1.0 - (std / 100.0))), 3)
-
         importance = {
             k: round(float(v), 4)
             for k, v in zip(FEATURE_KEYS, self._model.feature_importances_)
@@ -180,7 +172,6 @@ class AFIPredictor:
             final_afi_score=score,
             final_category=_score_to_category(score),
             feature_importance=importance,
-            model_confidence=confidence,
         )
 
     def retrain(self, real_X=None, real_y=None) -> dict:

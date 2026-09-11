@@ -44,7 +44,6 @@ class FinalBlock(BaseModel):
     final_category: str
     ml_powered: bool
     feature_importance: Dict[str, float]
-    model_confidence: float
     insights: List[str]
 
 

@@ -29,7 +29,6 @@ interface AFIResult {
   final_category: string;
   ml_powered: boolean;
   feature_importance: Record<string, number>;
-  model_confidence: number;
   insights: string[];
   visual_score?: number;
   tempo_bpm?: number;
