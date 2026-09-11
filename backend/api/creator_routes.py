@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import uuid
-from typing import List
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
@@ -71,9 +70,12 @@ async def creator_analyze(
             for future in as_completed(futures):
                 name = futures[future]
                 result = future.result()
-                if name == "visual":  visual_data   = result
-                elif name == "audio": audio_metrics  = result
-                elif name == "text":  text_metrics   = result
+                if name == "visual":
+                    visual_data = result
+                elif name == "audio":
+                    audio_metrics = result
+                elif name == "text":
+                    text_metrics = result
 
         # ── ML prediction ─────────────────────────────────────────────────────
         predictor  = get_predictor()

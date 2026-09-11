@@ -24,8 +24,8 @@ def results_prompt(
     feature_importance: dict,
     visual_description: str,
 ) -> str:
-    return f"""You are a human digital wellbeing coach watching a video. 
-Our raw algorithm rated this video as: {final_afi_score:.1f}/100 ({final_category}) 
+    return f"""You are a human digital wellbeing coach watching a video.
+Our raw algorithm rated this video as: {final_afi_score:.1f}/100 ({final_category})
 because of these metrics: Tempo {audio_metrics.get('tempo_bpm', 0):.0f} BPM, Words/sec {text_metrics.get('words_per_second', 0):.2f}.
 
 However, please synthesize this with the actual visual description from the frames:
@@ -53,7 +53,7 @@ def creator_prompt(
     top_issue = f"{top_rec.get('dimension')}: {top_rec.get('issue')}" if top_rec else "None"
 
     return f"""You are an empathetic content strategist reviewing a video's stats.
-AFI: {final_afi_score:.1f}/100 ({final_category}) | Captivation: {creator_result.get('captivation_score', 'N/A')}/100 
+AFI: {final_afi_score:.1f}/100 ({final_category}) | Captivation: {creator_result.get('captivation_score', 'N/A')}/100
 Top algorithm issue: {top_issue}
 
 Here is the raw visual description of the frames:
@@ -105,7 +105,7 @@ def wellbeing_analysis_prompt(
 ) -> str:
     return f"""You are a human digital wellbeing coach checking in on a user.
 
-Last video algorithmic stats: AFI {last_video_afi:.1f}/100 ({last_video_category}) 
+Last video algorithmic stats: AFI {last_video_afi:.1f}/100 ({last_video_category})
 Profile: {profile.get('profile_tier')} | Avg AFI: {profile.get('attention_fragmentation_index', 0):.1f} | Overstim ratio: {profile.get('overstim_ratio', 0):.0%}
 High-AFI mins this week: {profile.get('weekly_high_afi_minutes', 0):.0f} | Content Mix Calm: {profile.get('content_mix', {}).get('calm', 0):.0%}
 

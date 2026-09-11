@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from backend.api.schemas import (
     CheckinRequest,
     CheckinResponse,
-    WellbeingProfileResponse,
 )
 from backend.auth.jwt_handler import get_current_user
 from backend.core.wellbeing.harm_classifier import classify_history

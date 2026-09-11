@@ -28,7 +28,6 @@ def compute_attention_fragmentation_index(
         sum(s.get("final_afi", 0) or 0 for s in sessions) / len(sessions)
     )
     overstim_ratio = content_mix.get("overstimulating", 0) + content_mix.get("high", 0)
-    binge_penalty = min(binge_signals * 10, 30)   # up to 30 points for binge signals
 
     # Recency: weight last 3 days' content more heavily
     cutoff_recent = datetime.utcnow() - timedelta(days=3)

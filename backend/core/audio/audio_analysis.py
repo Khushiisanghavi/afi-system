@@ -48,7 +48,7 @@ class AudioAnalyzer:
 
     def compute_tempo(self, y, sr) -> float:
         tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
-        return float(tempo)
+        return float(tempo.item() if hasattr(tempo, "item") else tempo)
 
     def compute_rms_energy(self, y) -> float:
         rms = librosa.feature.rms(y=y)

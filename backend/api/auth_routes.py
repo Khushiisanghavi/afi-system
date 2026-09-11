@@ -11,7 +11,7 @@ as a new `users` table (created automatically).
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 
 from backend.database.db import SessionLocal, engine
@@ -107,7 +107,8 @@ def login(payload: LoginRequest):
 
     db2 = SessionLocal()
     db2.query(User).filter(User.id == user.id).update({"created_at": datetime.utcnow()})
-    db2.commit(); db2.close()
+    db2.commit()
+    db2.close()
 
     token = create_access_token(user_id=user.id, email=user.email)
     return AuthResponse(access_token=token, user_id=user.id, email=user.email, name=user.name or "")
