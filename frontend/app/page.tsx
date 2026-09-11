@@ -37,14 +37,16 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
   const [realStats, setRealStats] = useState<{ total: number; avgTime: string } | null>(null);
+  const [modelR2, setModelR2] = useState<string | null>(null);
 
   // Load real stats from backend on mount
   useEffect(() => {
-    fetch("http://localhost:8000/history/all")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setRealStats({ total: data.length, avgTime: "20–40s" });
+    // Fetch model R² from /model/info
+    fetch("http://localhost:8000/model/info")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d && typeof d.r2 === "number") {
+          setModelR2(`${Math.round(d.r2 * 100)}%`);
         }
       })
       .catch(() => {});
@@ -110,9 +112,9 @@ export default function HomePage() {
 
   // Real stats — only show numbers we can back up
   const stats = [
-    { v: realStats ? `${realStats.total}` : "—",     l: "Videos Analyzed" },
-    { v: "88%",                                        l: "Model R² Accuracy" },
-    { v: realStats?.avgTime ?? "20–40s",               l: "Avg Analysis Time" },
+    { v: realStats ? `${realStats.total}` : "—",  l: "Videos Analyzed" },
+    { v: modelR2 ?? "—",                           l: "Model R² Accuracy" },
+    { v: "20–40s",                                 l: "Avg Analysis Time" },
   ];
 
   return (
