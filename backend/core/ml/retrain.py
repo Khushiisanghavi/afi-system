@@ -9,7 +9,7 @@ Also runnable standalone: python -m backend.core.ml.retrain
 import numpy as np
 from backend.database.db import SessionLocal
 from backend.database.models import AnalysisResult
-from backend.core.ml.model import FEATURE_KEYS, train_and_save, MODEL_PATH
+from backend.core.ml.model import train_and_save, MODEL_PATH
 
 
 def load_real_data_from_db():
@@ -21,10 +21,10 @@ def load_real_data_from_db():
     rows = (
         db.query(AnalysisResult)
         .filter(
-            AnalysisResult.audio_tempo != None,
-            AnalysisResult.visual_score != None,
-            AnalysisResult.text_words_per_second != None,
-            AnalysisResult.final_afi != None,
+            AnalysisResult.audio_tempo.is_not(None),
+            AnalysisResult.visual_score.is_not(None),
+            AnalysisResult.text_words_per_second.is_not(None),
+            AnalysisResult.final_afi.is_not(None),
         )
         .all()
     )

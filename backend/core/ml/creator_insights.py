@@ -1,7 +1,7 @@
 """
 Creator Insights — generates human-readable summary strings for creator results.
 """
-from typing import Dict, List, Any
+from typing import Dict, List
 
 
 def generate_creator_insights(

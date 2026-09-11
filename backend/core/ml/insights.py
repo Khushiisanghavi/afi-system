@@ -5,7 +5,6 @@ Rule-based insight strings generated from your real pipeline outputs.
 No LLM needed. Called from routes.py after ML prediction.
 """
 
-from typing import Optional
 
 
 def generate_insights(

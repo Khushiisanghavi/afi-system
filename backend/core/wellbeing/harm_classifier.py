@@ -100,4 +100,3 @@ def _detect_binge_signals(classified: List[Dict]) -> int:
             in_binge = False
 
     return binge_count
-    

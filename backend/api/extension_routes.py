@@ -87,7 +87,7 @@ def get_session_summary(user: dict = Depends(get_optional_user)):
     """
     if not user:
         return {"stats_handled_locally": True}
-        
+
     db = SessionLocal()
     today = date.today()
     try:
@@ -97,14 +97,14 @@ def get_session_summary(user: dict = Depends(get_optional_user)):
             .filter(func.date(AnalysisResult.created_at) == today)
             .all()
         )
-        
+
         total_videos = len(results)
         if total_videos == 0:
             return {"total_videos": 0, "average_score": 0, "high_plus_count": 0}
-            
+
         avg_score = sum(r.final_afi for r in results) / total_videos
         high_plus = sum(1 for r in results if r.category in ["High", "Overstimulating"])
-        
+
         return {
             "total_videos": total_videos,
             "average_score": round(avg_score, 1),
