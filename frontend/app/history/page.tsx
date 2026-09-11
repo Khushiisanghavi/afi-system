@@ -28,17 +28,15 @@ export default function HistoryPage() {
 
       try {
         if (token && token !== "undefined" && token !== "null") {
-          // Logged in — fetch only this user's history
           setIsLoggedIn(true);
           const response = await axios.get("http://localhost:8000/history", {
             headers: { Authorization: `Bearer ${token}` },
           });
           setHistory(response.data);
         } else {
-          // Not logged in — fetch all (dev fallback)
           setIsLoggedIn(false);
-          const response = await axios.get("http://localhost:8000/history/all");
-          setHistory(response.data);
+          // No auth — show empty state prompting login
+          setHistory([]);
         }
       } catch (error: any) {
         if (error?.response?.status === 401) {
@@ -84,8 +82,17 @@ export default function HistoryPage() {
   if (!history.length) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "1rem" }}>
-        <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>No history available yet.</div>
-        <Link href="/" className="btn-primary" style={{ fontSize: "0.82rem" }}>← Analyze a Video</Link>
+        {!isLoggedIn ? (
+          <>
+            <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Sign in to see your analysis history.</div>
+            <Link href="/login" className="btn-primary" style={{ fontSize: "0.82rem" }}>Sign in →</Link>
+          </>
+        ) : (
+          <>
+            <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>No history yet.</div>
+            <Link href="/" className="btn-primary" style={{ fontSize: "0.82rem" }}>← Analyze a Video</Link>
+          </>
+        )}
       </div>
     );
   }
