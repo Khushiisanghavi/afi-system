@@ -5,9 +5,11 @@ LLM-powered insight endpoints using Groq.
 One endpoint per surface — results, creator, reports, wellbeing analysis, recovery plan.
 Vision model (llama-3.2-90b-vision-preview) used wherever a video path is available.
 Text model (llama-3.3-70b-versatile) used for report and recovery plan (no video needed).
+
+Returns HTTP 503 with {"detail": "LLM insights not configured"} when GROQ_API_KEY is unset.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 
@@ -21,6 +23,7 @@ from backend.services.insight_prompts import (
     wellbeing_analysis_prompt,
     recovery_plan_prompt,
 )
+from backend.auth.jwt_handler import get_current_user
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 
@@ -32,6 +35,12 @@ def _frames(video_path: str) -> list[str]:
         return extract_keyframes(video_path, n_frames=3)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Frame extraction failed: {e}")
+
+
+def _handle_groq_error(e: Exception):
+    if isinstance(e, RuntimeError) and "GROQ_API_KEY" in str(e):
+        raise HTTPException(status_code=503, detail="LLM insights not configured")
+    raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── Request bodies — field names match what routes.py actually returns ────────
@@ -79,29 +88,27 @@ class ResultsInsightRequest(BaseModel):
     audio_metrics: AudioMetrics
     text_metrics: TextMetrics
     feature_importance: dict
-    model_confidence: float
 
 
 @router.post("/results")
-async def results_insight(body: ResultsInsightRequest):
+async def results_insight(body: ResultsInsightRequest, _=Depends(get_current_user)):
     frames = _frames(body.video_path)
-    
-    # Step 1: Get raw visual description using the 11B vision model
-    visual_desc_prompt = visual_analysis_prompt()
-    visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
+    try:
+        visual_desc_prompt = visual_analysis_prompt()
+        visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
 
-    # Step 2: Pass visual description to the 70B text model
-    prompt = results_prompt(
-        final_afi_score=body.final_afi_score,
-        final_category=body.final_category,
-        visual_score=body.visual_score,
-        audio_metrics=body.audio_metrics.model_dump(),
-        text_metrics=body.text_metrics.model_dump(),
-        feature_importance=body.feature_importance,
-        model_confidence=body.model_confidence,
-        visual_description=visual_description,
-    )
-    insight = call_groq_text(prompt, max_tokens=650)
+        prompt = results_prompt(
+            final_afi_score=body.final_afi_score,
+            final_category=body.final_category,
+            visual_score=body.visual_score,
+            audio_metrics=body.audio_metrics.model_dump(),
+            text_metrics=body.text_metrics.model_dump(),
+            feature_importance=body.feature_importance,
+            visual_description=visual_description,
+        )
+        insight = call_groq_text(prompt, max_tokens=650)
+    except Exception as e:
+        _handle_groq_error(e)
     return {"llm_insight": insight}
 
 
@@ -115,57 +122,59 @@ class CreatorInsightRequest(BaseModel):
     audio_metrics: AudioMetrics
     text_metrics: TextMetrics
     feature_importance: dict
-    creator_result: dict  # full CreatorResult block from creator_routes.py
+    creator_result: dict
 
 
 @router.post("/creator")
-async def creator_insight(body: CreatorInsightRequest):
+async def creator_insight(body: CreatorInsightRequest, _=Depends(get_current_user)):
     frames = _frames(body.video_path)
-    
-    # Step 1: Get raw visual description using the 11B vision model
-    visual_desc_prompt = visual_analysis_prompt()
-    visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
+    try:
+        visual_desc_prompt = visual_analysis_prompt()
+        visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
 
-    # Step 2: Pass visual description to the 70B text model
-    prompt = creator_prompt(
-        final_afi_score=body.final_afi_score,
-        final_category=body.final_category,
-        visual_score=body.visual_score,
-        audio_metrics=body.audio_metrics.model_dump(),
-        text_metrics=body.text_metrics.model_dump(),
-        feature_importance=body.feature_importance,
-        creator_result=body.creator_result,
-        visual_description=visual_description,
-    )
-    insight = call_groq_text(prompt, max_tokens=800)
+        prompt = creator_prompt(
+            final_afi_score=body.final_afi_score,
+            final_category=body.final_category,
+            visual_score=body.visual_score,
+            audio_metrics=body.audio_metrics.model_dump(),
+            text_metrics=body.text_metrics.model_dump(),
+            feature_importance=body.feature_importance,
+            creator_result=body.creator_result,
+            visual_description=visual_description,
+        )
+        insight = call_groq_text(prompt, max_tokens=800)
+    except Exception as e:
+        _handle_groq_error(e)
     return {"llm_insight": insight}
 
 
 # ── 3. Reports / wellness insight ─────────────────────────────────────────────
 
 class ReportsInsightRequest(BaseModel):
-    period_label: str                        # e.g. "Week of 21 Jul 2025"
+    period_label: str
     avg_afi: float
     total_videos: int
-    category_breakdown: dict                 # calm/moderate/high/overstimulating counts
-    wow_trend: Optional[float] = None        # week-over-week delta, None if first week
+    category_breakdown: dict
+    wow_trend: Optional[float] = None
     peak_hour: Optional[int] = None
-    focus_checkins: list[dict] = []          # list of {focus_quality, notes, created_at}
+    focus_checkins: list[dict] = []
 
 
 @router.post("/reports")
-async def reports_insight(body: ReportsInsightRequest):
-    # Text-only — reports aggregate across many videos, no single video to show
-    prompt = reports_prompt(
-        avg_afi=body.avg_afi,
-        period_label=body.period_label,
-        total_videos=body.total_videos,
-        category_breakdown=body.category_breakdown,
-        wow_trend=body.wow_trend,
-        peak_hour=body.peak_hour,
-        focus_checkins=body.focus_checkins,
-    )
-    insight = call_groq_text(prompt, max_tokens=650)
+async def reports_insight(body: ReportsInsightRequest, _=Depends(get_current_user)):
+    try:
+        prompt = reports_prompt(
+            avg_afi=body.avg_afi,
+            period_label=body.period_label,
+            total_videos=body.total_videos,
+            category_breakdown=body.category_breakdown,
+            wow_trend=body.wow_trend,
+            peak_hour=body.peak_hour,
+            focus_checkins=body.focus_checkins,
+        )
+        insight = call_groq_text(prompt, max_tokens=650)
+    except Exception as e:
+        _handle_groq_error(e)
     return {"llm_insight": insight}
 
 
@@ -182,24 +191,24 @@ class WellbeingAnalysisRequest(BaseModel):
 
 
 @router.post("/wellbeing/analysis")
-async def wellbeing_analysis(body: WellbeingAnalysisRequest):
+async def wellbeing_analysis(body: WellbeingAnalysisRequest, _=Depends(get_current_user)):
     frames = _frames(body.last_video_path)
-    
-    # Step 1: Get raw visual description using the 11B vision model
-    visual_desc_prompt = visual_analysis_prompt()
-    visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
+    try:
+        visual_desc_prompt = visual_analysis_prompt()
+        visual_description = call_groq_vision(visual_desc_prompt, frames, max_tokens=150)
 
-    # Step 2: Pass visual description to the 70B text model
-    prompt = wellbeing_analysis_prompt(
-        profile=body.profile.model_dump(),
-        last_video_afi=body.last_video_afi,
-        last_video_category=body.last_video_category,
-        last_video_visual=body.last_video_visual,
-        audio_metrics=body.audio_metrics.model_dump(),
-        text_metrics=body.text_metrics.model_dump(),
-        visual_description=visual_description,
-    )
-    insight = call_groq_text(prompt, max_tokens=600)
+        prompt = wellbeing_analysis_prompt(
+            profile=body.profile.model_dump(),
+            last_video_afi=body.last_video_afi,
+            last_video_category=body.last_video_category,
+            last_video_visual=body.last_video_visual,
+            audio_metrics=body.audio_metrics.model_dump(),
+            text_metrics=body.text_metrics.model_dump(),
+            visual_description=visual_description,
+        )
+        insight = call_groq_text(prompt, max_tokens=600)
+    except Exception as e:
+        _handle_groq_error(e)
     return {"llm_insight": insight}
 
 
@@ -207,15 +216,17 @@ async def wellbeing_analysis(body: WellbeingAnalysisRequest):
 
 class RecoveryPlanInsightRequest(BaseModel):
     profile: WellbeingProfile
-    existing_plan: dict   # the RecoveryPlan block already returned by wellbeing_routes.py
+    existing_plan: dict
 
 
 @router.post("/wellbeing/recovery")
-async def recovery_plan_insight(body: RecoveryPlanInsightRequest):
-    # Text-only — no video context needed for a forward-looking plan
-    prompt = recovery_plan_prompt(
-        profile=body.profile.model_dump(),
-        existing_plan=body.existing_plan,
-    )
-    insight = call_groq_text(prompt, max_tokens=800)
+async def recovery_plan_insight(body: RecoveryPlanInsightRequest, _=Depends(get_current_user)):
+    try:
+        prompt = recovery_plan_prompt(
+            profile=body.profile.model_dump(),
+            existing_plan=body.existing_plan,
+        )
+        insight = call_groq_text(prompt, max_tokens=800)
+    except Exception as e:
+        _handle_groq_error(e)
     return {"llm_insight": insight}
