@@ -17,7 +17,7 @@ from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 
 from backend.core.limiter import limiter
-from backend.core.scoring.sub_scores import audio_sub_score, text_sub_score
+from backend.core.scoring.sub_scores import audio_sub_score, text_sub_score, compute_final_afi
 
 import yt_dlp
 
@@ -26,8 +26,8 @@ from backend.core.audio.audio_analysis import AudioAnalyzer
 from backend.core.text.ocr_analysis import TextAnalyzer
 from backend.core.video.visual_pipeline import analyze_visual_component
 
-# ── ML model ─────────────────────────────────────────────────────────────────
-from backend.core.ml.model import get_predictor
+# ── ML model (experimental — not used for scoring) ───────────────────────────
+from backend.core.ml.model import get_predictor, build_feature_vector, compute_contribution, MLPrediction
 
 # ── Insight engine ────────────────────────────────────────────────────────────
 from backend.core.ml.insights import generate_insights
@@ -109,6 +109,7 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
         except Exception as exc:
             soft_errors.append(f"audio: {exc}")
             audio_metrics = {
+                "has_audio": False,
                 "tempo_bpm": 0.0, "rms_energy": 0.0,
                 "amplitude_spike_ratio": 0.0, "zero_crossing_rate": 0.0,
                 "duration_seconds": 0.0,
@@ -131,11 +132,7 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
     if soft_errors:
         print(f"[pipeline] Soft errors in wave 1: {soft_errors}")
 
-    # ── Wave 2: ML prediction + keyframe extraction in parallel ───────────────
-    def _run_prediction():
-        predictor = get_predictor()
-        return predictor.predict(audio_metrics, visual_data, text_metrics)
-
+    # ── Wave 2: Formula scoring + keyframe extraction in parallel ─────────────
     def _run_keyframes():
         if fast_mode:
             return []
@@ -146,13 +143,33 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
             print(f"[pipeline] Keyframe extraction failed (non-fatal): {exc}")
             return []
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        f_pred   = executor.submit(_timed, _run_prediction)
-        f_frames = executor.submit(_timed, _run_keyframes)
-        prediction, timing["ml_predict_ms"]        = f_pred.result()
-        frames_b64, timing["keyframe_extract_ms"]  = f_frames.result()
+    frames_b64, timing["keyframe_extract_ms"] = _timed(_run_keyframes)
+
+    timing["ml_predict_ms"] = 0  # formula is instant
 
     # ── Rule-based insights (fast, no API call) ───────────────────────────────
+    a_score_pre = audio_sub_score(
+        audio_metrics.get("tempo_bpm", 0.0),
+        audio_metrics.get("rms_energy", 0.0),
+        audio_metrics.get("amplitude_spike_ratio", 0.0),
+        audio_metrics.get("zero_crossing_rate", 0.0),
+    )
+    t_score_pre = text_sub_score(
+        text_metrics.get("words_per_second", 0.0),
+        text_metrics.get("avg_text_area_ratio", 0.0),
+        text_metrics.get("text_change_rate", 0.0),
+    )
+    v_score_pre = float((visual_data or {}).get("visual_score", 0.0))
+    formula_score, formula_category = compute_final_afi(v_score_pre, a_score_pre, t_score_pre)
+    features_vec = build_feature_vector(audio_metrics, visual_data, text_metrics)
+    ppc = compute_contribution(features_vec)
+    prediction = MLPrediction(
+        final_afi_score=formula_score,
+        final_category=formula_category,
+        feature_importance={},
+        per_prediction_contribution=ppc,
+        ml_powered=False,
+    )
     insights = generate_insights(audio_metrics, visual_data, text_metrics, prediction)
 
     # ── Wave 3: LLM insight (uses prediction + frames) ────────────────────────
@@ -163,12 +180,13 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
             from backend.services.groq_client import call_groq_vision
             from backend.services.insight_prompts import results_prompt
             prompt = results_prompt(
-                final_afi_score=prediction.final_afi_score,
-                final_category=prediction.final_category,
-                visual_score=float((visual_data or {}).get("visual_score", 0)),
+                final_afi_score=formula_score,
+                final_category=formula_category,
+                visual_score=v_score_pre,
                 audio_metrics=audio_metrics,
                 text_metrics=text_metrics,
-                feature_importance=prediction.feature_importance,
+                feature_importance={},
+                visual_description="",
             )
             llm_insight = call_groq_vision(prompt, frames_b64, max_tokens=650)
         except Exception as exc:
@@ -182,30 +200,17 @@ def _run_pipeline(file_path: str, fast_mode: bool = False):
 
     print(f"[pipeline] timing={timing}")
 
-    # ── Compute real sub-scores from the shared canonical formulas ────────────
-    a_score = audio_sub_score(
-        audio_metrics.get("tempo_bpm", 0.0),
-        audio_metrics.get("rms_energy", 0.0),
-        audio_metrics.get("amplitude_spike_ratio", 0.0),
-        audio_metrics.get("zero_crossing_rate", 0.0),
-    )
-    t_score = text_sub_score(
-        text_metrics.get("words_per_second", 0.0),
-        text_metrics.get("avg_text_area_ratio", 0.0),
-        text_metrics.get("text_change_rate", 0.0),
-    )
-
     # ── Build response ─────────────────────────────────────────────────────────
-    audio_response = {**audio_metrics, "audio_score": a_score}
-    text_response  = {**text_metrics,  "text_score":  t_score}
+    audio_response = {**audio_metrics, "audio_score": a_score_pre}
+    text_response  = {**text_metrics,  "text_score":  t_score_pre}
     final_response = {
-        "final_afi_score":    prediction.final_afi_score,
-        "final_category":     prediction.final_category,
-        "ml_powered":         True,
-        "feature_importance": prediction.feature_importance,
-        "insights":           insights,
-        "llm_insight":        llm_insight,
-        "stage_timings":      timing,
+        "final_afi_score":             formula_score,
+        "final_category":              formula_category,
+        "ml_powered":                  False,
+        "per_prediction_contribution": ppc,
+        "insights":                    insights,
+        "llm_insight":                 llm_insight,
+        "stage_timings":               timing,
     }
 
     return visual_data, audio_response, text_response, final_response, audio_metrics, text_metrics
@@ -288,10 +293,13 @@ async def analyze_url(
 
     if not os.path.exists(out_path):
         ydl_opts = {
-            "format":      "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-            "outtmpl":     out_path,
-            "quiet":       True,
-            "no_warnings": True,
+            "format":          "bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+            "outtmpl":         out_path,
+            "quiet":           True,
+            "no_warnings":     True,
+            # android client bypasses the 403 that the web client gets for
+            # Shorts that are age-soft-gated or missing SABR stream data.
+            "extractor_args":  {"youtube": {"player_client": ["android"]}},
         }
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -372,9 +380,15 @@ def model_info():
         "feature_names":  FEATURE_KEYS,
         "training_data":  "synthetic",
         "note": (
-            "Trained on 800 synthetic samples derived from a deterministic formula. "
-            "R² and MAE reflect held-out synthetic data only."
+            "EXPERIMENTAL — not used for scoring. "
+            "The production score is computed directly from the weighted formula "
+            "(0.4×visual + 0.35×audio + 0.25×text) in sub_scores.py. "
+            "This RandomForest was trained on 800 synthetic samples with independently-drawn "
+            "features; real videos have correlated features, so the model extrapolates "
+            "poorly in sparse regions (mean absolute difference from formula: ~5.4 pts on 40-video corpus). "
+            "R² and MAE figures below reflect held-out synthetic data only."
         ),
+        "scoring_source": "formula",
     }
     metrics_path = MODEL_PATH.replace(".pkl", "_metrics.json")
     if os.path.exists(metrics_path):

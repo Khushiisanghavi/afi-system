@@ -87,7 +87,7 @@ class ResultsInsightRequest(BaseModel):
     visual_score: float
     audio_metrics: AudioMetrics
     text_metrics: TextMetrics
-    feature_importance: dict
+    feature_importance: dict = {}
 
 
 @router.post("/results")
@@ -121,8 +121,8 @@ class CreatorInsightRequest(BaseModel):
     visual_score: float
     audio_metrics: AudioMetrics
     text_metrics: TextMetrics
-    feature_importance: dict
     creator_result: dict
+    feature_importance: dict = {}
 
 
 @router.post("/creator")

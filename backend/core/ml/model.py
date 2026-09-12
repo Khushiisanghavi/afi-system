@@ -4,7 +4,13 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Optional
 
-from backend.core.scoring.sub_scores import audio_sub_score, text_sub_score
+from backend.core.scoring.sub_scores import (
+    audio_sub_score, text_sub_score,
+    _norm,
+    TEMPO_LO, TEMPO_HI, RMS_LO, RMS_HI, SPIKE_LO, SPIKE_HI, ZCR_LO, ZCR_HI,
+    WPS_LO, WPS_HI, AREA_LO, AREA_HI, CHANGE_LO, CHANGE_HI,
+    ENGAGEMENT_THRESHOLDS, score_to_category,
+)
 
 FEATURE_KEYS = [
     "tempo_bpm",
@@ -17,21 +23,10 @@ FEATURE_KEYS = [
     "text_change_rate",
 ]
 
-ENGAGEMENT_THRESHOLDS = [
-    (0,  30,  "Calm"),
-    (30, 60,  "Moderate"),
-    (60, 80,  "High"),
-    (80, 101, "Overstimulating"),
-]
-
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "afi_model.pkl")
 
-
-def _score_to_category(score: float) -> str:
-    for lo, hi, label in ENGAGEMENT_THRESHOLDS:
-        if lo <= score < hi:
-            return label
-    return "Moderate"
+# Backward-compat alias — rescore_corpus.py imports this name
+_score_to_category = score_to_category
 
 
 def build_feature_vector(
@@ -56,14 +51,16 @@ def _generate_synthetic_data(n: int = 800, seed: int = 42):
     X, y = [], []
 
     for _ in range(n):
-        tempo       = rng.uniform(60, 200)
-        rms         = rng.uniform(0.005, 0.20)
-        spike_ratio = rng.uniform(0.0, 0.12)
-        zcr         = rng.uniform(0.01, 0.20)
+        # Ranges imported from sub_scores.py — single source of truth.
+        # Changing a normalization bound there automatically updates training data.
+        tempo       = rng.uniform(TEMPO_LO,  TEMPO_HI)
+        rms         = rng.uniform(RMS_LO,    RMS_HI)
+        spike_ratio = rng.uniform(SPIKE_LO,  SPIKE_HI)
+        zcr         = rng.uniform(ZCR_LO,    ZCR_HI)
         visual      = rng.uniform(0, 100)
-        wps         = rng.uniform(0, 6)
-        text_area   = rng.uniform(0, 0.4)
-        text_change = rng.uniform(0, 3)
+        wps         = rng.uniform(WPS_LO,    WPS_HI)
+        text_area   = rng.uniform(AREA_LO,   AREA_HI)
+        text_change = rng.uniform(CHANGE_LO, CHANGE_HI)
 
         audio_score = audio_sub_score(tempo, rms, spike_ratio, zcr)
         text_score  = text_sub_score(wps, text_area, text_change)
@@ -123,12 +120,32 @@ def train_and_save(model_path: str = MODEL_PATH, real_X=None, real_y=None) -> di
     return metrics
 
 
+def compute_contribution(features: dict) -> dict:
+    """
+    Per-feature contribution panel: normalized_value × global_weight for each feature.
+    Global weights: visual 40%, audio 35% (split across 4 features), text 25% (split across 3).
+    This is a formula-based decomposition, not a RandomForest output.
+    """
+    visual_norm = features.get("visual_score", 0.0) / 100.0
+    return {
+        "visual_score":          round(0.40   * visual_norm, 4),
+        "tempo_bpm":             round(0.1225 * _norm(features.get("tempo_bpm", 0.0),             TEMPO_LO,  TEMPO_HI),  4),
+        "rms_energy":            round(0.0875 * _norm(features.get("rms_energy", 0.0),             RMS_LO,    RMS_HI),    4),
+        "amplitude_spike_ratio": round(0.0875 * _norm(features.get("amplitude_spike_ratio", 0.0),  SPIKE_LO,  SPIKE_HI),  4),
+        "zero_crossing_rate":    round(0.0525 * _norm(features.get("zero_crossing_rate", 0.0),     ZCR_LO,    ZCR_HI),    4),
+        "words_per_second":      round(0.10   * _norm(features.get("words_per_second", 0.0),       WPS_LO,    WPS_HI),    4),
+        "avg_text_area_ratio":   round(0.0875 * _norm(features.get("avg_text_area_ratio", 0.0),    AREA_LO,   AREA_HI),   4),
+        "text_change_rate":      round(0.0625 * _norm(features.get("text_change_rate", 0.0),       CHANGE_LO, CHANGE_HI), 4),
+    }
+
+
 @dataclass
 class MLPrediction:
-    final_afi_score:    float
-    final_category:     str
-    feature_importance: dict
-    ml_powered:         bool = True
+    final_afi_score:             float
+    final_category:              str
+    feature_importance:          dict
+    per_prediction_contribution: dict
+    ml_powered:                  bool = False  # experimental only — not used for scoring
 
 
 class AFIPredictor:
@@ -151,6 +168,11 @@ class AFIPredictor:
         visual_data: dict,
         text_metrics: dict,
     ) -> MLPrediction:
+        """
+        EXPERIMENTAL — not used for scoring in production.
+        The authoritative score is computed by compute_final_afi() in sub_scores.py.
+        This method is retained for research / comparison purposes only.
+        """
         features = build_feature_vector(audio_metrics, visual_data, text_metrics)
         vector = np.array([[features[k] for k in FEATURE_KEYS]])
 
@@ -164,8 +186,9 @@ class AFIPredictor:
 
         return MLPrediction(
             final_afi_score=score,
-            final_category=_score_to_category(score),
+            final_category=score_to_category(score),
             feature_importance=importance,
+            per_prediction_contribution=compute_contribution(features),
         )
 
     def retrain(self, real_X=None, real_y=None) -> dict:
