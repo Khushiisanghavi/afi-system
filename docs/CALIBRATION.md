@@ -10,6 +10,13 @@ the scoring path and the training distribution in one step.
 The original bounds were hand-fitted to three benchmark videos:
 `cooking.mp4`, `history_fact.mp4`, `sample_testing_video.mp4`.
 
+**Corpus data:** All raw feature values, scores, and category labels for the
+40-video calibration corpus are in [`data/feature_corpus.csv`](../data/feature_corpus.csv).
+It has 40 rows (one per video) and columns: url, duration\_seconds, tempo\_bpm,
+rms\_energy, amplitude\_spike\_ratio, zero\_crossing\_rate, visual\_score,
+words\_per\_second, avg\_text\_area\_ratio, text\_change\_rate, audio\_score,
+text\_score, final\_afi, category, elapsed\_seconds.
+
 ---
 
 ## Finding: Original Bounds Were Too Low

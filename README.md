@@ -112,7 +112,7 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt   # pytest + ruff (needed to run tests)
 ```
 
-> **First run:** EasyOCR downloads ~1.5 GB of model weights on first use. Expect 3–5 minutes on a slow connection before the first analysis completes.
+> **First run:** EasyOCR downloads ~1.5 GB of model weights on first use. Expect 3–5 minutes on a slow connection. Additionally, the first analysis after each server start takes ~45 s while EasyOCR and numba load model weights into memory; subsequent analyses take ~15–25 s.
 
 Copy `.env.example` to `.env` and fill in values:
 

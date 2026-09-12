@@ -26,8 +26,9 @@ node_modules/
 # OS files
 .DS_Store
 
-# Batch collection output
-data/
+# Batch collection output (feature_corpus.csv is committed; exclude everything else)
+data/*
+!data/feature_corpus.csv
 
 # ML model (regenerated on first run)
 backend/core/ml/afi_model.pkl
