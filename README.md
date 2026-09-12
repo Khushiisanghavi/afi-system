@@ -109,6 +109,7 @@ Run all commands from the **repo root** (not inside `backend/`):
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+pip install -r requirements-dev.txt   # pytest + ruff (needed to run tests)
 ```
 
 > **First run:** EasyOCR downloads ~1.5 GB of model weights on first use. Expect 3–5 minutes on a slow connection before the first analysis completes.
