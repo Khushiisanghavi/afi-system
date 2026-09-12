@@ -3,7 +3,7 @@ venv/
 .venv/
 __pycache__/
 *.pyc
-
+*.swp
 # Environment
 .env
 
@@ -25,4 +25,9 @@ node_modules/
 
 # OS files
 .DS_Store
+
+# Batch collection output
+data/
+
+# ML model (regenerated on first run)
 backend/core/ml/afi_model.pkl
