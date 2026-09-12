@@ -52,7 +52,7 @@ def generate_insights(
     area_ratio  = text_metrics.get("avg_text_area_ratio", 0)
 
     if wps > 3:
-        insights.append(f"High text density ({wps:.1f} words/sec) — fast-paced on-screen text increases cognitive load.")
+        insights.append(f"High text density ({wps:.1f} words/frame avg) — dense on-screen text increases cognitive load.")
     if change_rate > 1.5:
         insights.append("Rapid text changes — frequent subtitle/caption updates demand split attention.")
     if area_ratio > 0.2:
@@ -68,25 +68,5 @@ def generate_insights(
         insights.append(f"AFI {score:.1f} — High stimulation. Limit back-to-back sessions of this content type.")
     elif category == "Calm":
         insights.append(f"AFI {score:.1f} — Calm content. Good for winding down or focused study.")
-
-    # Top driver
-    if prediction.feature_importance:
-        top = max(prediction.feature_importance, key=prediction.feature_importance.get)
-        labels = {
-            "tempo_bpm":             "audio tempo",
-            "rms_energy":            "audio loudness",
-            "amplitude_spike_ratio": "audio spikes",
-            "zero_crossing_rate":    "audio texture",
-            "visual_score":          "visual activity",
-            "words_per_second":      "text speed",
-            "avg_text_area_ratio":   "text coverage",
-            "text_change_rate":      "text change rate",
-        }
-        label = labels.get(top, top)
-        imp   = prediction.feature_importance[top]
-        insights.append(
-            f"Global model weight: {label} has the highest model-wide importance ({imp:.0%}). "
-            "This is the same for every video, not specific to this prediction."
-        )
 
     return insights
