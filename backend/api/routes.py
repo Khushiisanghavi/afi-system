@@ -27,7 +27,7 @@ from backend.core.text.ocr_analysis import TextAnalyzer
 from backend.core.video.visual_pipeline import analyze_visual_component
 
 # ── ML model (experimental — not used for scoring) ───────────────────────────
-from backend.core.ml.model import get_predictor, build_feature_vector, compute_contribution, MLPrediction
+from backend.core.ml.model import build_feature_vector, compute_contribution, MLPrediction
 
 # ── Insight engine ────────────────────────────────────────────────────────────
 from backend.core.ml.insights import generate_insights

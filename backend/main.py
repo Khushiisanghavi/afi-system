@@ -15,8 +15,6 @@ from backend.api.extension_routes import router as extension_router
 from backend.core.limiter import limiter
 from backend.database.db import engine
 from backend.database import models
-from backend.core.ml.model import AFIPredictor
-
 app = FastAPI(title="AFI API", version="2.2.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -39,11 +37,6 @@ app.include_router(insight_router,   tags=["Insights"])
 app.include_router(extension_router, prefix="/extension", tags=["Extension"])
 
 
-@app.on_event("startup")
-def startup_event():
-    predictor = AFIPredictor()
-    predictor._load()
-    print("AFI ML model ready.")
 
 
 @app.get("/health", tags=["System"])
