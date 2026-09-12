@@ -33,10 +33,14 @@ function getCategoryColor(cat: string) {
 }
 function featureLabel(key: string) {
   const map: Record<string, string> = {
-    visual_score: "Visual Activity", tempo_bpm: "Audio Tempo",
-    rms_energy: "Audio Loudness", amplitude_spike_ratio: "Audio Spikes",
-    zero_crossing_rate: "Audio Texture", words_per_second: "Text Speed",
-    avg_text_area_ratio: "Text Coverage", text_change_rate: "Text Changes",
+    visual_score:            "Visual Activity",
+    tempo_bpm:               "Audio Tempo",
+    rms_energy:              "Audio Loudness",
+    amplitude_spike_ratio:   "Audio Spikes",
+    zero_crossing_rate:      "Audio Texture",
+    words_per_second:        "Avg Words/Frame",
+    avg_text_area_ratio:     "Text Coverage",
+    text_change_rate:        "Text Changes",
   };
   return map[key] ?? key;
 }
@@ -78,7 +82,6 @@ export default function ResultsPage() {
             text_change_rate:     parsed.text?.text_change_rate ?? 0,
             duration_seconds:     parsed.text?.duration_seconds ?? 0,
           },
-          feature_importance: parsed.final?.feature_importance ?? {},
         }),
       })
         .then((r) => r.ok ? r.json() : null)
@@ -97,11 +100,14 @@ export default function ResultsPage() {
     );
   }
 
-  const category     = data.final?.final_category;
-  const score        = data.final?.final_afi_score ?? 0;
-  const catColor     = getCategoryColor(category);
+  const category      = data.final?.final_category;
+  const score         = data.final?.final_afi_score ?? 0;
+  const catColor      = getCategoryColor(category);
   const circumference = 2 * Math.PI * 45;
-  const dashOffset   = circumference - (score / 100) * circumference;
+  const dashOffset    = circumference - (score / 100) * circumference;
+  // Dial displays integer to avoid overflow — exact value in tooltip / category badge
+  const dialDisplay   = String(Math.round(score));
+  const dialFontSize  = dialDisplay.length <= 2 ? "2.75rem" : "2.1rem";
 
   const modalityData = [
     {
@@ -124,9 +130,9 @@ export default function ResultsPage() {
       name: "Text",
       score: data.text?.text_score ?? 0,
       features: [
-        { label: "Words/s", value: (data.text?.words_per_second ?? 0).toFixed(2) },
-        { label: "Area",    value: ((data.text?.avg_text_area_ratio ?? 0) * 100).toFixed(1) + "%" },
-        { label: "Changes/s", value: (data.text?.text_change_rate ?? 0).toFixed(2) },
+        { label: "Words/frame", value: (data.text?.words_per_second ?? 0).toFixed(2) },
+        { label: "Area",        value: ((data.text?.avg_text_area_ratio ?? 0) * 100).toFixed(1) + "%" },
+        { label: "Changes/s",   value: (data.text?.text_change_rate ?? 0).toFixed(2) },
       ],
     },
   ];
@@ -140,15 +146,16 @@ export default function ResultsPage() {
     ? timelineData.reduce((max: any, s: any) => (s.score > max.score ? s : max))
     : null;
 
-  const mlPowered      = data.final?.ml_powered ?? false;
-  const insights       = data.final?.insights ?? [];
-  const rawImportance  = data.final?.feature_importance ?? {};
+  const insights   = data.final?.insights ?? [];
 
-  const importanceData = Object.entries(rawImportance)
+  const rawContrib = data.final?.per_prediction_contribution ?? {};
+  const contribData = Object.entries(rawContrib)
     .map(([key, val]) => ({ name: featureLabel(key), value: Math.round((val as number) * 100), raw: val as number }))
     .sort((a, b) => b.value - a.value);
 
-  const topFeature = importanceData[0];
+  const topContrib   = contribData[0];
+  // Sum of contributions ≈ final AFI score (each bar = points toward the 0–100 score)
+  const contribTotal = contribData.reduce((s, d) => s + d.value, 0);
 
   return (
     <motion.div 
@@ -165,11 +172,6 @@ export default function ResultsPage() {
           <Link href="/" style={{ color: "var(--muted)", textDecoration: "none" }}>Home</Link>
           <span>/</span>
           <span style={{ color: "var(--foreground)" }}>Results</span>
-          {mlPowered && (
-            <span style={{ marginLeft: "0.5rem", background: "rgba(95, 75, 254, 0.12)", border: "1px solid rgba(95, 75, 254, 0.3)", color: "var(--primary)", borderRadius: "4px", padding: "0.1rem 0.6rem", fontSize: "0.65rem", letterSpacing: "0.05em" }}>
-              ML POWERED
-            </span>
-          )}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "1rem" }}>
           <div>
@@ -198,38 +200,40 @@ export default function ResultsPage() {
                 style={{ strokeDasharray: circumference, strokeDashoffset: dashOffset, transform: "rotate(-90deg)", transformOrigin: "center", transition: "stroke-dashoffset 1.4s ease" }} />
             </svg>
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-              <span className="mono" style={{ fontSize: "2.75rem", fontWeight: 700, color: catColor, lineHeight: 1 }}>{score}</span>
-              <span className="sans" style={{ fontSize: "0.85rem", color: "var(--muted-mid)", marginTop: "0.2rem" }}>/100</span>
+              <span className="mono" style={{ fontSize: dialFontSize, fontWeight: 700, color: catColor, lineHeight: 1 }}>{dialDisplay}</span>
+              <span className="sans" style={{ fontSize: "0.75rem", color: "var(--muted-mid)", marginTop: "0.2rem" }}>{score.toFixed(1)}</span>
             </div>
           </div>
           <span className={`tag-badge ${getCategoryClass(category)}`} style={{ borderRadius: "100px", fontSize: "0.75rem", padding: "0.4rem 1.25rem", letterSpacing: "0.15em", border: "none" }}>{category}</span>
         </div>
 
-        {/* AI Insight Card */}
+        {/* Signal Summary Card */}
         <div className="card-glass" style={{ padding: "2.5rem", gridColumn: "span 2" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
             <span style={{ width: "2.5rem", height: "2.5rem", borderRadius: "10px", background: "rgba(95, 75, 254, 0.15)", border: "1px solid rgba(95, 75, 254, 0.3)", color: "var(--primary)", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}>✦</span>
-            <span className="sans" style={{ fontWeight: 600, fontSize: "1.1rem", color: "#ffffff" }}>AI Insight</span>
+            <span className="sans" style={{ fontWeight: 600, fontSize: "1.1rem", color: "#ffffff" }}>Signal Summary</span>
+            {llmInsight && (
+              <span style={{ fontSize: "0.65rem", letterSpacing: "0.08em", padding: "0.1rem 0.5rem", background: "rgba(95,75,254,0.12)", border: "1px solid rgba(95,75,254,0.3)", color: "var(--primary)", borderRadius: "4px" }}>AI-GENERATED</span>
+            )}
             {llmLoading && (
               <span className="spinner" style={{ width: "1rem", height: "1rem", borderTopColor: "var(--primary)", borderColor: "rgba(255,255,255,0.1)", marginLeft: "0.5rem" }} />
             )}
           </div>
 
-          {/* LLM insight — shown when ready, falls back to rule-based */}
           {llmInsight ? (
             <div style={{ fontSize: "0.95rem", lineHeight: 1.8, color: "var(--muted-mid)", whiteSpace: "pre-wrap" }}>
               {llmInsight}
             </div>
           ) : !llmLoading ? (
             <p className="sans" style={{ fontSize: "1.05rem", lineHeight: 1.8, color: "var(--muted-mid)" }}>
-              {`This video shows ${category?.toLowerCase()} levels of attention stimulation.` +
-                (data.visual?.visual_score > 70 ? " High visual fragmentation contributes significantly." : "") +
-                (score > 70 ? " Frequent audio spikes increase stimulation." : "") +
-                (data.text?.words_per_second > 3 ? " Rapid on-screen text adds to cognitive load." : "")}
+              {`This video scores ${score.toFixed(1)} (${category?.toLowerCase()}) on the AFI scale.` +
+                (data.visual?.visual_score > 70 ? ` Visual motion is high (${data.visual.visual_score.toFixed(1)}/100).` : "") +
+                (data.audio?.audio_score > 70 ? ` Audio stimulation is elevated (${data.audio.audio_score.toFixed(1)}/100).` : "") +
+                (data.text?.words_per_second > 3 ? ` On-screen text density is above average.` : "")}
             </p>
           ) : (
             <p className="sans" style={{ fontSize: "1rem", color: "var(--muted)", fontStyle: "italic" }}>
-              Generating insight from matrix...
+              Analyzing signals...
             </p>
           )}
 
@@ -288,35 +292,43 @@ export default function ResultsPage() {
         </motion.div>
       )}
 
-      {/* FEATURE IMPORTANCE */}
-      {importanceData.length > 0 && (
+      {/* PER-PREDICTION CONTRIBUTION */}
+      {contribData.length > 0 && (
         <motion.div variants={FADE_UP} className="card-glass" style={{ padding: "2.5rem" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
             <div>
-              <h2 className="sans" style={{ fontWeight: 600, fontSize: "1.2rem", marginBottom: "0.25rem", color: "#ffffff" }}>Global Model Feature Weights</h2>
-              <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>How this RandomForest weights each feature across all videos — not specific to this prediction</p>
+              <h2 className="sans" style={{ fontWeight: 600, fontSize: "1.2rem", marginBottom: "0.25rem", color: "#ffffff" }}>What drove THIS video's score</h2>
+              <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+                Each bar = points contributed to the final AFI score (0–100). Visual max 40 pts · Audio max 35 pts · Text max 25 pts.
+              </p>
             </div>
-            {topFeature && (
+            {topContrib && (
               <div style={{ background: "rgba(95, 75, 254, 0.08)", border: "1px solid rgba(95, 75, 254, 0.2)", borderRadius: "12px", padding: "0.75rem 1.25rem", textAlign: "right" }}>
-                <div className="sans" style={{ fontSize: "0.7rem", color: "var(--muted-mid)", marginBottom: "0.2rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Highest global weight</div>
-                <div className="sans" style={{ fontSize: "1rem", fontWeight: 600, color: "var(--primary)" }}>{topFeature.name}</div>
-                <div className="mono" style={{ fontSize: "0.8rem", color: "var(--muted-mid)" }}>{topFeature.value}% (model-wide)</div>
+                <div className="sans" style={{ fontSize: "0.7rem", color: "var(--muted-mid)", marginBottom: "0.2rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Biggest driver</div>
+                <div className="sans" style={{ fontSize: "1rem", fontWeight: 600, color: "var(--primary)" }}>{topContrib.name}</div>
+                <div className="mono" style={{ fontSize: "0.8rem", color: "var(--muted-mid)" }}>{topContrib.value} pts / 100</div>
               </div>
             )}
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={importanceData} layout="vertical" barSize={18} margin={{ left: 16, right: 16 }}>
+            <BarChart data={contribData} layout="vertical" barSize={18} margin={{ left: 16, right: 16 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,139,250,0.08)" horizontal={false} />
-              <XAxis type="number" domain={[0, 100]} tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+              <XAxis type="number" domain={[0, 40]} tick={{ fill: "#6b6890", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v} pts`} />
               <YAxis type="category" dataKey="name" width={130} tick={{ fill: "#9ca3af", fontSize: 12, fontFamily: "'Inter', sans-serif" }} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{ fill: "rgba(167,139,250,0.04)" }} />
+              <Tooltip cursor={{ fill: "rgba(167,139,250,0.04)" }} formatter={(v) => [`${v} pts`, "Points toward score"]} />
               <Bar dataKey="value" radius={[0, 8, 8, 0]} animationDuration={1500} animationEasing="ease-out">
-                {importanceData.map((_, i) => (
+                {contribData.map((_, i) => (
                   <Cell key={i} fill={i === 0 ? "var(--primary)" : i === 1 ? "#7c3aed66" : "rgba(167,139,250,0.25)"} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid rgba(167,139,250,0.1)" }}>
+            <span className="mono" style={{ fontSize: "0.85rem", color: "var(--muted-mid)" }}>
+              Sum: <span style={{ color: "var(--foreground)", fontWeight: 600 }}>{contribTotal} pts</span>
+              <span style={{ color: "var(--muted)", marginLeft: "0.5rem" }}>= AFI score ({score.toFixed(1)})</span>
+            </span>
+          </div>
         </motion.div>
       )}
 

@@ -37,19 +37,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
   const [realStats, setRealStats] = useState<{ total: number; avgTime: string } | null>(null);
-  const [modelR2, setModelR2] = useState<string | null>(null);
-
   // Load real stats from backend on mount
   useEffect(() => {
-    // Fetch model R² from /model/info
-    fetch("http://localhost:8000/model/info")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => {
-        if (d && typeof d.r2 === "number") {
-          setModelR2(`${Math.round(d.r2 * 100)}%`);
-        }
-      })
-      .catch(() => {});
   }, []);
 
   const handleAnalyze = async () => {
@@ -104,16 +93,16 @@ export default function HomePage() {
   };
 
   const features = [
-    { icon: "◈", title: "Visual Scoring",  desc: "Cuts, motion, colour bursts, on-screen text density" },
-    { icon: "◉", title: "Audio Analysis",  desc: "BPM, sudden loud events, overlapping sounds" },
-    { icon: "◎", title: "Text Detection",  desc: "Caption speed, emoji frequency, hook language" },
-    { icon: "◆", title: "Timeline View",   desc: "Per-scene stimulation mapped across the full video" },
+    { icon: "◈", title: "Visual Scoring",  desc: "Optical flow motion magnitude and scene cut density — measured frame-by-frame with Farneback optical flow." },
+    { icon: "◉", title: "Audio Analysis",  desc: "Tempo (BPM), RMS energy, amplitude spike ratio, and zero-crossing rate — four independent dimensions of audio stimulation." },
+    { icon: "◎", title: "Text Detection",  desc: "Text regions per frame, screen area coverage, and region change rate — extracted from raw video frames using OCR." },
+    { icon: "◆", title: "Timeline View",   desc: "Per-scene motion mapped across the full video — see exactly where stimulation spikes and where it drops." },
   ];
 
   // Real stats — only show numbers we can back up
   const stats = [
     { v: realStats ? `${realStats.total}` : "—",  l: "Videos Analyzed" },
-    { v: modelR2 ?? "—",                           l: "Model R² Accuracy" },
+    { v: "3",                                      l: "Modalities Measured" },
     { v: "20–40s",                                 l: "Avg Analysis Time" },
   ];
 
@@ -151,7 +140,7 @@ export default function HomePage() {
 
           <motion.div variants={FADE_UP} style={{ marginBottom: "2.5rem" }}>
             <span className="label-sm" style={{ letterSpacing: "0.28em" }}>
-              AI-Powered Attention Analysis
+              Quantified Attention Analysis
             </span>
           </motion.div>
 
@@ -324,8 +313,8 @@ export default function HomePage() {
         marginBottom: "5rem",
       }}>
         <div className="marquee-track" style={{ display: "flex", gap: "2.5rem", whiteSpace: "nowrap" }}>
-          {["Visual Scoring", "Audio Analysis", "Text Detection", "Scene Timeline", "AFI Score", "Wellness Insights", "Compare Videos", "AI Explanations",
-            "Visual Scoring", "Audio Analysis", "Text Detection", "Scene Timeline", "AFI Score", "Wellness Insights", "Compare Videos", "AI Explanations"
+          {["Visual Scoring", "Audio Analysis", "Text Detection", "Scene Timeline", "AFI Score", "Wellness Insights", "Compare Videos", "Score Breakdown",
+            "Visual Scoring", "Audio Analysis", "Text Detection", "Scene Timeline", "AFI Score", "Wellness Insights", "Compare Videos", "Score Breakdown"
           ].map((t, j) => (
             <span key={j} className="label-sm">
               {t} <span style={{ color: "#a78bfa", margin: "0 0.5rem" }}>·</span>

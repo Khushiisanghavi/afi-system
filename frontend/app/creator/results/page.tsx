@@ -154,11 +154,6 @@ export default function CreatorResultsPage() {
         <Link href="/creator" style={{ color: "var(--muted)", textDecoration: "none" }}>Creator Studio</Link>
         <span>/</span>
         <span style={{ color: "var(--foreground)" }}>Results</span>
-        {afi.ml_powered && (
-          <span style={{ marginLeft: "0.5rem", padding: "0.15rem 0.5rem", background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: "4px", color: "#a78bfa", fontSize: "0.65rem", letterSpacing: "0.05em" }}>
-            ML POWERED
-          </span>
-        )}
       </div>
 
       {/* ── Row 1: Captivation ring + AFI vs Captivation ── */}
