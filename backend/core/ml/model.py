@@ -9,7 +9,7 @@ from backend.core.scoring.sub_scores import (
     _norm,
     TEMPO_LO, TEMPO_HI, RMS_LO, RMS_HI, SPIKE_LO, SPIKE_HI, ZCR_LO, ZCR_HI,
     WPS_LO, WPS_HI, AREA_LO, AREA_HI, CHANGE_LO, CHANGE_HI,
-    ENGAGEMENT_THRESHOLDS, score_to_category,
+    score_to_category,
 )
 
 FEATURE_KEYS = [
