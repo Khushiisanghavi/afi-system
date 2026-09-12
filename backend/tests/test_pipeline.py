@@ -17,8 +17,9 @@ except ImportError:
 @pytest.mark.skipif(not HAS_EASYOCR, reason="easyocr not installed (full venv required)")
 def test_sub_scores_are_distinct(fixture_video):
     """
-    audio_score, text_score, and final_afi_score must all be different.
-    If any two are equal it likely means one is an alias of another.
+    visual_score, audio_score, text_score, and final_afi_score must all be
+    pairwise different. Equality between any pair indicates one is an alias of
+    another (the bug this test caught: audio/text were both set to final_afi).
     """
     from backend.core.audio.audio_analysis import AudioAnalyzer
     from backend.core.text.ocr_analysis import TextAnalyzer
@@ -26,10 +27,11 @@ def test_sub_scores_are_distinct(fixture_video):
     from backend.core.ml.model import get_predictor
     from backend.core.scoring.sub_scores import audio_sub_score, text_sub_score
 
-    audio = AudioAnalyzer(fixture_video).analyze()
-    text  = TextAnalyzer(fixture_video).analyze()
+    audio  = AudioAnalyzer(fixture_video).analyze()
+    text   = TextAnalyzer(fixture_video).analyze()
     visual = analyze_visual_component(fixture_video)
 
+    v_score = float(visual.get("visual_score", 0.0))
     a_score = audio_sub_score(
         audio["tempo_bpm"], audio["rms_energy"],
         audio["amplitude_spike_ratio"], audio["zero_crossing_rate"],
@@ -40,9 +42,11 @@ def test_sub_scores_are_distinct(fixture_video):
     prediction = get_predictor().predict(audio, visual, text)
     final = prediction.final_afi_score
 
-    assert a_score != t_score,   f"audio_score == text_score == {a_score}"
-    assert a_score != final,     f"audio_score == final_afi_score == {a_score}"
-    assert t_score != final,     f"text_score  == final_afi_score == {t_score}"
+    scores = {"visual": v_score, "audio": a_score, "text": t_score, "final": final}
+    assert len(set(scores.values())) == 4, (
+        "Expected 4 distinct scores, got duplicates: "
+        + ", ".join(f"{k}={v}" for k, v in scores.items())
+    )
 
 
 # ── Video opens ───────────────────────────────────────────────────────────────
