@@ -1,7 +1,7 @@
 from scenedetect import open_video, SceneManager, ContentDetector
 
 
-def detect_scenes(video_path, threshold=27.0):
+def detect_scenes(video_path, threshold=15.0):
     try:
         video = open_video(video_path)
         scene_manager = SceneManager()

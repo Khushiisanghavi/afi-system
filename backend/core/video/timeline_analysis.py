@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from backend.core.video.scene_detection import detect_scenes
+from backend.core.scoring.sub_scores import _norm, MOTION_LO, MOTION_HI, MOTION_MAX_HI, CUT_DENSITY_HI
 
 
 def generate_visual_timeline(video_path):
@@ -56,9 +57,13 @@ def generate_visual_timeline(video_path):
     if not motion_per_frame:
         raise RuntimeError(f"No processable frames found in video: {video_path}")
 
-    motion_values = np.array([m for (_, m) in motion_per_frame])
-    motion_mean = float(np.mean(motion_values))
-    motion_std = float(np.std(motion_values))
+    # Cut density: transitions between scenes per second of video.
+    # This is a video-level property applied as a bonus to every scene score so
+    # that high-motion continuous-camera videos (0 cuts) can still reach ~85
+    # on avg/max motion alone, while fast-cut videos get the remaining 15 points.
+    n_cuts = max(len(scenes) - 1, 0)
+    cut_density = n_cuts / max(duration, 1.0)
+    norm_cut_density = _norm(cut_density, 0.0, CUT_DENSITY_HI)
 
     timeline = []
     for scene in scenes:
@@ -74,19 +79,18 @@ def generate_visual_timeline(video_path):
             avg_motion = 0.0
             max_motion = 0.0
 
-        norm_duration = 1 - min(duration_s / 3.0, 1.0)
-        denom = motion_mean + motion_std
-        if denom > 0:
-            norm_avg_motion = min(avg_motion / denom, 1.0)
-            norm_max_motion = min(max_motion / (motion_mean + 2 * motion_std + 1e-9), 1.0)
-        else:
-            norm_avg_motion = 0.0
-            norm_max_motion = 0.0
+        # Corpus-calibrated absolute normalization.
+        # Formula: motion carries 85% of the score so a high-motion single-segment
+        # video can reach ~85/100; cut density adds the remaining 15 as a bonus.
+        # The old formula gave duration a 40% weight, which made the ceiling 60 for
+        # any video whose cuts ContentDetector couldn't detect.
+        norm_avg_motion = _norm(avg_motion, MOTION_LO, MOTION_HI)
+        norm_max_motion = _norm(max_motion, MOTION_LO, MOTION_MAX_HI)
 
         scene_score = (
-            0.4 * norm_duration +
-            0.4 * norm_avg_motion +
-            0.2 * norm_max_motion
+            0.60 * norm_avg_motion +
+            0.25 * norm_max_motion +
+            0.15 * norm_cut_density
         )
 
         timeline.append({

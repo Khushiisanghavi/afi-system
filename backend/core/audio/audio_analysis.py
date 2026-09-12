@@ -1,8 +1,28 @@
+import json
 import os
+import subprocess
 import librosa
 import numpy as np
 import ffmpeg
 from typing import Dict
+
+
+def _probe_has_audio(video_path: str) -> bool:
+    """Return True if the video file contains at least one audio stream."""
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe", "-v", "quiet",
+                "-print_format", "json",
+                "-show_streams",
+                video_path,
+            ],
+            capture_output=True, text=True, timeout=10,
+        )
+        info = json.loads(result.stdout)
+        return any(s.get("codec_type") == "audio" for s in info.get("streams", []))
+    except Exception:
+        return True  # assume present if probe fails; analysis will surface the error
 
 
 class AudioAnalyzer:
@@ -12,6 +32,8 @@ class AudioAnalyzer:
     Optimisations vs original:
     - Extracts at 16kHz instead of 22050Hz (librosa processes ~30% less data)
     - All beat/feature algorithms work correctly at 16kHz
+    - Returns has_audio=False immediately for videos with no audio stream,
+      so callers can distinguish "no audio track" from "analysis failed".
     """
 
     def __init__(self, video_path: str):
@@ -65,10 +87,21 @@ class AudioAnalyzer:
         return float(np.mean(zcr))
 
     def analyze(self) -> Dict:
+        if not _probe_has_audio(self.video_path):
+            return {
+                "has_audio":              False,
+                "tempo_bpm":              0.0,
+                "rms_energy":             0.0,
+                "amplitude_spike_ratio":  0.0,
+                "zero_crossing_rate":     0.0,
+                "duration_seconds":       0.0,
+            }
+
         self.extract_audio()
         y, sr = self.load_audio()
 
         results = {
+            "has_audio":              True,
             "tempo_bpm":              self.compute_tempo(y, sr),
             "rms_energy":             self.compute_rms_energy(y),
             "amplitude_spike_ratio":  self.compute_amplitude_spike_ratio(y),
